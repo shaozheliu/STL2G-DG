@@ -18,7 +18,7 @@ class DeepConvNettest(nn.Module):
         self.batchnorm2 = nn.BatchNorm2d(20)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
 
-        self.fc1 = nn.Linear(20 * 51, self.nb_class)
+        self.fc1 = nn.Linear(30 * 51, self.nb_class)
 
     def forward(self, x):
         x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
@@ -35,7 +35,7 @@ class DeepConvNettest(nn.Module):
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
         x = torch.mean(x, dim=1)
-        x = x.reshape(-1, 20 * 51)
+        x = x.reshape(-1, 30 * 51)
         # FC Layer
         x = self.fc1(x)
         return x

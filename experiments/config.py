@@ -73,5 +73,30 @@ config = {
                     'n_layers': 2,
                     'alpha_scala': 1
             },
+        },
+        'BlackNet': {
+            'OpenBMI': {
+                    'input_shape': (1,20,400),
+                    'data_format': 'NDCT',
+                    'num_class': 2,
+                    'domain_class': 18,
+                    'lr': 0.002,
+                    'batch_size': 250,
+                    'epochs': 200,
+                    'dropout':0.3,
+                    'd_model_dict' :{
+                        'spatial':40,
+                        'temporal':40,
+                        'st_fusion':40
+                        },
+                    'head_dict' :{
+                        'spatial': 2,
+                         'temporal': 1,
+                        'st_fusion':1
+                    },
+                    'd_ff': 10,
+                    'n_layers': 2,
+                    'alpha_scala': 1
+            },
         }
 }

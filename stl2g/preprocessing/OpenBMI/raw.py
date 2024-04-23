@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.io as sio
+from collections import Counter
 from stl2g.utils import resampling, butter_bandpass_filter
 from stl2g.preprocessing.config import CONSTANT
 from sklearn.model_selection import train_test_split
@@ -330,8 +331,7 @@ if __name__ == '__main__':
     path = CONSTANT['raw_path']
     chs_group = CONSTANT['spatial_ch_group']
     session = 1
-    subject = 1
-    subject_list = [1,2]
+    subject_list = [5]
     num_class = 2
     sel_chs = CONSTANT['sel_chs']
     # 筛选我们需要的channel
@@ -342,5 +342,6 @@ if __name__ == '__main__':
     # raw_train_data, label_train_data, \
     # raw_test_data, label_test_data = read_raw(path, session, subject, num_class, id_ch_selected)
     subject_data, subject_label, subject_domain_label = load_data_batchs(path, session, subject_list, num_class, id_ch_selected, 0.1)
-
+    label_test = Counter(subject_label)
+    print('Counter \n', Counter(subject_label))
     print(f'训练数据维度:{subject_data.shape}')

@@ -18,13 +18,13 @@ sys.path.append(base_dir)
 from stl2g.preprocessing.config import CONSTANT
 from stl2g.preprocessing.OpenBMI import raw
 from stl2g.utils import get_loaders
-from stl2g.model.DeepConvNet import DeepConvNet, DeepConvNettest
+from stl2g.model.BackBone import BlackNet
 
 
 
-def DeepConvNet_prepare_training(org_ch, lr, dropout, nb_class):
+def BlackNet_prepare_training(spatial_div_dict, temporal_div_dict, lr, dropout, nb_class):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = DeepConvNettest(org_ch, dropout, nb_class).to(device)
+    model = BlackNet(spatial_div_dict, temporal_div_dict, dropout, nb_class).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
     criterion = nn.CrossEntropyLoss()
@@ -124,7 +124,7 @@ def test_evaluate(model, device, X, y, model_name):
     roc_auc = roc_auc_score(labels, te)
     return acc, ka, prec, recall, roc_auc
 
-def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs, lr, model_name, dropout, nb_class):
+def subject_independent_validation(dataSet, subjects, spatial_local_dict, temporal_local_dict, batch_size, epochs, lr, model_name, dropout, nb_class):
     acc_ls = []
     ka_ls = []
     prec_ls = []
@@ -139,10 +139,12 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
         print(f'train subjects are: {train_subs}, test subject is: {test_sub}')
         sel_chs = CONSTANT[dataSet]['sel_chs']
         id_ch_selected = raw.chanel_selection(sel_chs)
+        div_id = raw.channel_division(spatial_local_dict)
+        spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
         # 加载数据
-        train_X, train_y, train_domain_y = raw.load_data_batchs2(path, session, train_subs, num_class,
-                                                                       id_ch_selected, 0.25)
-        test_X, test_y, test_domain_y = raw.load_data_batchs2(path, session, test_sub, num_class, id_ch_selected, 0.25)
+        train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, num_class,
+                                                                       id_ch_selected, 0.1)
+        test_X, test_y, test_domain_y = raw.load_data_batchs(path, session, test_sub, num_class, id_ch_selected, 0.1)
         # 数据标准化
         X_train_mean = train_X.mean(0)
         X_train_var = np.sqrt(train_X.var(0))
@@ -156,9 +158,11 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
         train_sample = dataloaders['train'].dataset.X.shape[0]
         test_sample = dataloaders['test'].dataset.X.shape[0]
         dataset = {'dataset_sizes': {'train': train_sample, 'test': test_sample}}
-        model, optimizer, lr_scheduler, criterion, device, criterion_domain = DeepConvNet_prepare_training(org_ch, lr, dropout, nb_class)
+        model, optimizer, lr_scheduler, criterion, device, criterion_domain = BlackNet_prepare_training(spatial_region_split, temporal_local_dict, lr, dropout, nb_class)
         print(summary(model, input_size=[(train_X.shape[1], train_X.shape[2])]))
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
+        torch.save(best_model.state_dict(),
+                   f'checkpoints/{dataSet}/{model_name}/exp_{model_name}_dropout:{dropout}_lr:{lr}_fold:{i}.pth')
         acc, ka, prec, recall, roc_auc = test_evaluate(best_model, device, test_X, test_y, model_name)
         acc_ls.append(acc)
         ka_ls.append(ka)
@@ -174,7 +178,7 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
-    model_type = 'DeepConvNet'
+    model_type = 'BlackNet'
     dataSet = 'OpenBMI'
     path = CONSTANT[dataSet]['raw_path']
     subject = CONSTANT[dataSet]['n_subjs']
@@ -184,6 +188,8 @@ if __name__ == '__main__':
     lr = config[model_type][dataSet]['lr']
     dropout = config[model_type][dataSet]['dropout']
     nb_class = config[model_type][dataSet]['num_class']
+    spatial_local_dict = CONSTANT[dataSet]['spatial_ch_group']
+    temporal_local_dict = CONSTANT[dataSet]['temporal_ch_region']
     # subject = 3
     num_class = 2
     session = 1
@@ -191,10 +197,14 @@ if __name__ == '__main__':
     for directory in [log_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)
+    ckpt_path = f'checkpoints/{dataSet}/{model_type}'
+    for directory in [ckpt_path]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
     outputfile = open(
         f'{log_path}/exp_{model_type}_numsubjects_{subject}_dropout{dropout}_numch{num_ch}.txt', 'w')
     sys.stdout = outputfile
     loo = LeaveOneOut()
-    subject_independent_validation(dataSet, subject, num_ch, batch_size, epochs, lr, model_type, dropout, nb_class)
+    subject_independent_validation(dataSet, subject, spatial_local_dict, temporal_local_dict, batch_size, epochs, lr, model_type, dropout, nb_class)
     outputfile.close()  # 关闭文件
 

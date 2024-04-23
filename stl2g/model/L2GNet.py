@@ -366,8 +366,6 @@ class S_Backbone_test(nn.Module):
 
         # Layer 3
         self.conv3 = nn.Conv2d(in_channels=20, out_channels=20, kernel_size=(1,4), stride=(1,10))
-        # self.conv3 = nn.Conv2d(in_channels=40, out_channels=)
-        # self.fc1 = nn.Linear(120, 10)
 
     def forward(self, x):
         x = x.unsqueeze(1)  # bathc, 1, ch, 400
