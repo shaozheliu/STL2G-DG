@@ -8,14 +8,16 @@ class BackBoneNet(nn.Module):
         ##----------------ShallowNet 基准网络------------------#
         self.dropout = dropout
         # Layer 1
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 40), padding=(0,6))
-        self.conv1_2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(ch, 1))
+        # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 40), padding=(0,6))   # 10
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1, 40), padding=(0, 6))
+        self.conv1_2 = nn.Conv2d(in_channels=8, out_channels=4, kernel_size=(ch, 1))
         self.batchnorm1 = nn.BatchNorm2d(4)
         self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
 
         # Layer 2
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(8)
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
+        self.conv2 = nn.Conv2d(in_channels=4, out_channels=2, kernel_size=(1, 20), padding=(0, 4), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(2)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
 
 
@@ -34,7 +36,7 @@ class BackBoneNet(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 8 * 10)
+        x = x.reshape(-1, 2 * 8)
         return x
 
 
@@ -44,14 +46,16 @@ class BackBoneNet_t(nn.Module):
         ##----------------ShallowNet 基准网络------------------#
         self.dropout = dropout
         # Layer 1
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 10), padding=(0,2))
-        self.conv1_2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(ch, 1))
+        # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 10), padding=(0,2))  # 10
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1, 10), padding=(0, 0))
+        self.conv1_2 = nn.Conv2d(in_channels=8, out_channels=4, kernel_size=(ch, 1))
         self.batchnorm1 = nn.BatchNorm2d(4)
         self.pooling1 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 2))
 
         # Layer 2
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(8)
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)   # 10
+        self.conv2 = nn.Conv2d(in_channels=4, out_channels=2, kernel_size=(1, 10), padding=(0), bias=False)  # 10
+        self.batchnorm2 = nn.BatchNorm2d(2)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 4))
 
 
@@ -70,7 +74,7 @@ class BackBoneNet_t(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 8 * 10)
+        x = x.reshape(-1, 2 * 8)
         return x
 
 
@@ -124,13 +128,13 @@ class BlackNet(nn.Module):
         # 空间维度backbone分块卷积
         self.Local_spatial_conved = Spatial_Local_Conv(spatial_div_dict, dropout)
         self.Local_temporal_conved = Temporal_Local_Conv(temporal_div_dict, dropout)
-        self.fc1 = nn.Linear(self.st_len * 80, nb_class)
+        self.fc1 = nn.Linear(self.st_len * 16, nb_class)
 
     def forward(self, x):
         S_Region_tensor = torch.cat(self.Local_spatial_conved(x), dim=1)
         T_Region_tensor = torch.cat(self.Local_temporal_conved(x), dim=1)
         fusion = torch.cat([S_Region_tensor, T_Region_tensor], dim=1)
-        ret = fusion.reshape(-1, self.st_len * 80)
+        ret = fusion.reshape(-1, self.st_len * 16)
         ret = self.fc1(ret)
         return  ret
 

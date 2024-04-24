@@ -41,7 +41,7 @@ def train_model_with_domain(model, criterion, criterion_domain, optimizer,lr_sch
     best_acc = 0.0
     for epoch in tqdm.tqdm(range(n_epoch)):
         sys.stdout.flush()
-        print('Epoch {}/{}'.format(epoch + 1, 300))
+        print('Epoch {}/{}'.format(epoch + 1, n_epoch))
         print('-' * 10)
 
         # Each epoch has a training and validation phase

@@ -402,19 +402,19 @@ class Temporal_Embedding2(nn.Module):
 
 
 class Temporal_Embedding(nn.Module):
-    def __init__(self, dropout):
+    def __init__(self,in_channels, out_channels, dropout):
             super(Temporal_Embedding, self).__init__()
-            ##----------------ShallowNet 基准网络------------------#
             self.dropout = dropout
             # Layer 1
-            self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, 40), padding=0)
-            self.batchnorm1 = nn.BatchNorm2d(10)
-            self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
+            self.conv1 = nn.Conv2d(1, out_channels, (1, 22), padding=0)
 
             # Layer 2
-            self.conv2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(1, 20), padding=(0,2), bias=False)
-            self.batchnorm2 = nn.BatchNorm2d(20)
-            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
+            self.conv2 = nn.Conv2d(out_channels, out_channels, (in_channels, 1), bias=False)
+            self.batchnorm = nn.BatchNorm2d(out_channels)
+            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 30), stride=(1, 4))
+
+            # Layer 3
+            self.conv3 = nn.Conv1d(out_channels, out_channels, kernel_size=5, stride=5)
 
     def forward(self, x):
         x = x.unsqueeze(1)   # sample, 1, eeg_channel, timepoints
@@ -660,7 +660,7 @@ class STL2G(nn.Module):
 
 
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 20, 400))
+    inp = torch.autograd.Variable(torch.randn(2, 30, 400))
     s_head = 2
     d_head = 2
     s_d_model = 62
@@ -672,7 +672,7 @@ if __name__ == "__main__":
     n_layers = 3
     dropout = 0.1
     n_heads = 4
-    local_dict = {'1': [0, 2, 3, 4], '2': [6, 1, 7, 13], '3': [18, 19], '4': [5, 11, 17, 12], '5': [8, 9, 10, 14, 15, 16]}
+    spatial_local_dict = {'1': [0, 2, 3, 4], '2': [6, 1, 7, 13], '3': [18, 19], '4': [5, 11, 17, 12], '5': [8, 9, 10, 14, 15, 16]}
     temp_local_dict = {
             '1':[i for i in range(10)],
             '2':[i for i in range(10,20)],

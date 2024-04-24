@@ -20,7 +20,7 @@ from stl2g.preprocessing.OpenBMI import raw
 from stl2g.utils import get_loaders
 from stl2g.model.L2GNet import L2GNet
 
-
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -50,7 +50,7 @@ def train_model_with_domain(model, criterion, criterion_domain, optimizer, sched
     best_acc = 0.0
     for epoch in tqdm.tqdm(range(n_epoch)):
         sys.stdout.flush()
-        print('Epoch {}/{}'.format(epoch+1, 300))
+        print('Epoch {}/{}'.format(epoch+1, n_epoch))
         print('-' * 10)
 
         # Each epoch has a training and validation phase

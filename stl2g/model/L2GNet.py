@@ -352,75 +352,73 @@ class Encoder(nn.Module):
 ##########################################新的模型##########################################
 
 class S_Backbone_test(nn.Module):
-    def __init__(self, kernel_length, dropout):
+    def __init__(self, ch, dropout):
         super(S_Backbone_test, self).__init__()
         self.dropout = dropout
         # Layer 1
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, kernel_length), padding=0)
-        self.batchnorm1 = nn.BatchNorm2d(10)
-        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
-        # Layer 2
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(kernel_length, 1), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(20)
-        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
+        # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 40), padding=(0,6))   # 10
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1, 40), padding=(0, 6))
+        self.conv1_2 = nn.Conv2d(in_channels=8, out_channels=4, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
 
-        # Layer 3
-        self.conv3 = nn.Conv2d(in_channels=20, out_channels=20, kernel_size=(1,4), stride=(1,10))
+        # Layer 2
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
+        self.conv2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(1, 20), padding=(0, 4), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(4)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
 
     def forward(self, x):
-        x = x.unsqueeze(1)  # bathc, 1, ch, 400
+        x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
         # Layer 1
-        x = self.conv1(x)  # batch, 40, 5, 396
+        x = self.conv1(x)  # sample, out_channels, eeg_channel, time_dim
+        x = self.conv1_2(x)
         x = self.batchnorm1(x)
-        x = F.relu(x)
+        x = F.elu(x)
         x = self.pooling1(x)
         x = F.dropout(x, self.dropout)
         # Layer 2
         x = self.conv2(x)
         x = self.batchnorm2(x)
-        x = F.relu(x)
+        x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        # x = x.squeeze(2)
-        x = self.conv3(x)
-
-        # # FC Layer
-        x = x.reshape(-1, 20 * 2)   # 这个卷积的shape也可以调整
+        x = x.reshape(-1, 4 * 8)
         return x
 
 class T_Backbone_test(nn.Module):
-    def __init__(self, kernel_length, dropout):
+    def __init__(self, ch, dropout):
         super(T_Backbone_test, self).__init__()
         self.dropout = dropout
         # Layer 1
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, kernel_length), padding=0)
-        self.batchnorm1 = nn.BatchNorm2d(10)
-        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
-        # Layer 2
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(kernel_length, 1), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(20)
-        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
+        # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 10), padding=(0,2))  # 10
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(1, 10), padding=(0, 0))
+        self.conv1_2 = nn.Conv2d(in_channels=2, out_channels=4, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 2))
 
-        # Layer 3
-        self.conv3 = nn.Conv2d(in_channels=20, out_channels=40, kernel_size=(1, 4), stride=(1, 8))
+        # Layer 2
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)   # 10
+        self.conv2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(1, 10), padding=(0), bias=False)  # 10
+        self.batchnorm2 = nn.BatchNorm2d(4)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 4))
 
     def forward(self, x):
-        x = x.unsqueeze(1)  # bathc, 1, ch, 400
+        x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
         # Layer 1
-        x = self.conv1(x)  # batch, 40, 5, 396
+        x = self.conv1(x)  # sample, out_channels, eeg_channel, time_dim
+        x = self.conv1_2(x)
         x = self.batchnorm1(x)
-        x = F.relu(x)
+        x = F.elu(x)
         x = self.pooling1(x)
         x = F.dropout(x, self.dropout)
         # Layer 2
         x = self.conv2(x)
         x = self.batchnorm2(x)
-        x = F.relu(x)
+        x = F.elu(x)
         x = self.pooling2(x)
-        x = F.dropout(x, self.dropout)   # 这个卷积的shape也可以调整
-
-        # # FC Layer
-        x = x.reshape(-1, 20*2)
+        x = F.dropout(x, self.dropout)
+        x = x.reshape(-1, 4 * 8)
         return x
 
 
@@ -569,6 +567,7 @@ class Temporal_Local_Conv(nn.Module):
         self.dropout = dropout
 
         for i in self.division.keys():
+            # 这里的参数传的是总channel数
             rigion_conv = T_Backbone_test(30, dropout)
             setattr(self, f'T_region_conv{i}', rigion_conv)
 
@@ -643,20 +642,20 @@ class L2GNet(nn.Module):
 
         # Class classifier layer
         self.class_classifier = nn.Sequential()
-        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 16))
-        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(16))
+        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
+        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(8))
         self.class_classifier.add_module('c_relu1', nn.ReLU(True))
         self.class_classifier.add_module('c_drop1', nn.Dropout(dropout))
-        self.class_classifier.add_module('c_fc2', nn.Linear(16, clf_class))
+        self.class_classifier.add_module('c_fc2', nn.Linear(8, clf_class))
         #
         # Domain classifier
         self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 16))
+        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 8))
         # self.domain_classifier.add_module('d_fc1', nn.Linear(4840, 32))
-        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(16))
+        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(8))
         self.domain_classifier.add_module('d_relu1', nn.ReLU(True))
         self.domain_classifier.add_module('d_drop1', nn.Dropout(dropout))
-        self.domain_classifier.add_module('d_fc2', nn.Linear(16, domain_class))
+        self.domain_classifier.add_module('d_fc2', nn.Linear(8, domain_class))
 
 
     def forward(self, x, alpha):
@@ -687,9 +686,9 @@ if __name__ == "__main__":
         '4':[i for i in range(300,400)],
     }
     d_model_dic = {
-        'spatial':40,
-        'temporal':40,
-        'st':40
+        'spatial':64,
+        'temporal':64,
+        'st_fusion':64
     }
     head_dic = {
         'spatial': 1,

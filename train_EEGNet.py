@@ -174,6 +174,7 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     model_type = 'EEGNet'
     dataSet = 'OpenBMI'
     path = CONSTANT[dataSet]['raw_path']
