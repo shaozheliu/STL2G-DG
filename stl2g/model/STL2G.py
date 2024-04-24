@@ -406,32 +406,27 @@ class Temporal_Embedding(nn.Module):
             super(Temporal_Embedding, self).__init__()
             self.dropout = dropout
             # Layer 1
-            self.conv1 = nn.Conv2d(1, out_channels, (1, 22), padding=0)
+            self.conv1 = nn.Conv2d(in_channels=1, out_channels=out_channels, kernel_size=(1, 30), padding=0)
 
             # Layer 2
             self.conv2 = nn.Conv2d(out_channels, out_channels, (in_channels, 1), bias=False)
             self.batchnorm = nn.BatchNorm2d(out_channels)
-            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 30), stride=(1, 4))
+            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
 
             # Layer 3
-            self.conv3 = nn.Conv1d(out_channels, out_channels, kernel_size=5, stride=5)
+            self.conv3 = nn.Conv1d(out_channels, out_channels, kernel_size=6, stride=4)
 
     def forward(self, x):
-        x = x.unsqueeze(1)   # sample, 1, eeg_channel, timepoints
+        x = x.unsqueeze(1)
         # Layer 1
-        x = self.conv1(x)    # sample, out_channels, eeg_channel, time_dim
-        x = self.batchnorm1(x)
-        x = F.relu(x)
-        x = self.pooling1(x)
-        x = F.dropout(x, self.dropout)
-        # Layer 2
+        x = self.conv1(x)
         x = self.conv2(x)
-        x = self.batchnorm2(x)
+        x = self.batchnorm(x)
         x = F.relu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-
-        x = torch.mean(x, dim = 1)
+        x = x.squeeze(2)
+        x = self.conv3(x)
         return x
 
 class Region_Spatial_Encoder(nn.Module):
@@ -679,7 +674,7 @@ if __name__ == "__main__":
             '3':[i for i in range(20,30)],
             '4':[i for i in range(30,35)]
         }
-    model = Temporal_Embedding(0.3)
+    model = Temporal_Embedding(30, 30, 0.3)
     res = model(inp)
     # model = STL2G(d_model_dict, head_dict, d_ff, n_layers, local_dict, temp_local_dict, dropout, clf_class=2, domain_class=8)
 
