@@ -20,7 +20,7 @@ from stl2g.preprocessing.OpenBMI import raw
 from stl2g.utils import get_loaders
 from stl2g.model.L2GNet import L2GNet
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     for directory in [log_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)
-    ckpt_path = f'checkpoints/{dataSet}/{model_type}'
+    ckpt_path = f'checkpoints/{dataSet}/{model_type}/{d_model_dict}'
     for directory in [ckpt_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)

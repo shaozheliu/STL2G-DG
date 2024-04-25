@@ -331,8 +331,8 @@ class S_Backbone_test(nn.Module):
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=5, kernel_size=(1, 20), padding=(0, 4), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(5)
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=8, kernel_size=(1, 20), padding=(0, 4), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(8)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
 
     def forward(self, x):
@@ -350,7 +350,7 @@ class S_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 5 * 8)
+        x = x.reshape(-1, 8 * 8)
         return x
 
 class T_Backbone_test(nn.Module):
@@ -366,8 +366,8 @@ class T_Backbone_test(nn.Module):
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)   # 10
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=5, kernel_size=(1, 10), padding=(0), bias=False)  # 10
-        self.batchnorm2 = nn.BatchNorm2d(5)
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=8, kernel_size=(1, 10), padding=(0), bias=False)  # 10
+        self.batchnorm2 = nn.BatchNorm2d(8)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 4))
 
     def forward(self, x):
@@ -385,7 +385,7 @@ class T_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 5 * 8)
+        x = x.reshape(-1, 8 * 8)
         return x
 
 
@@ -653,9 +653,9 @@ if __name__ == "__main__":
         '4':[i for i in range(300,400)],
     }
     d_model_dic = {
-        'spatial':64,
-        'temporal':64,
-        'st_fusion':64
+        'spatial':80,
+        'temporal':80,
+        'st_fusion':80
     }
     head_dic = {
         'spatial': 1,
