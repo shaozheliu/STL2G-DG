@@ -39,12 +39,12 @@ config = {
                     'num_class': 2,
                     'domain_class': 18,
                     'lr': 0.001,
-                    'batch_size': 300,
+                    'batch_size': 250,
                     'epochs': 300,
                     'dropout':0.3,
-                    'd_model_dict':{'spatial':16, 'temporal':20},
-                    'head_dict':{'spatial':1, 'temporal':1},
-                    'd_ff': 1,
+                    'd_model_dict':{'spatial':30, 'temporal':30},
+                    'head_dict':{'spatial':2, 'temporal':2},
+                    'd_ff': 2,
                     'n_layers': 3,
                     'alpha_scala': 1
             },
@@ -55,19 +55,19 @@ config = {
                     'data_format': 'NDCT',
                     'num_class': 2,
                     'domain_class': 18,
-                    'lr': 0.002,
+                    'lr': 0.0015,
                     'batch_size': 250,
                     'epochs': 200,
                     'dropout':0.3,
                     'd_model_dict' :{
-                        'spatial':32,
-                        'temporal':32,
-                        'st_fusion':32
+                        'spatial':40,
+                        'temporal':40,
+                        'st_fusion':40
                         },
                     'head_dict' :{
                         'spatial': 2,
-                         'temporal': 1,
-                        'st_fusion':1
+                         'temporal': 2,
+                        'st_fusion':2
                     },
                     'd_ff': 2,
                     'n_layers': 2,

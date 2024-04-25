@@ -217,11 +217,11 @@ if __name__ == '__main__':
     alpha_scala = config[model_type][dataSet]['alpha_scala']
     # subject = 3
     session = 1
-    log_path =  f'logs/{dataSet}'
+    log_path =  f'logs/{dataSet}/{model_type}'
     for directory in [log_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)
-    ckpt_path = f'checkpoints/{dataSet}'
+    ckpt_path = f'checkpoints/{dataSet}/{model_type}'
     for directory in [ckpt_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)

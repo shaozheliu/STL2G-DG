@@ -74,39 +74,6 @@ class SublayerConnection(nn.Module):
         """
         return self.dropout(self.layer_norm(x + sublayer(x)))
 
-
-# def self_attention(query, key, value, dropout=None, mask=None):
-#     """
-#     自注意力计算
-#     :param query: Q
-#     :param key: K
-#     :param value: V
-#     :param dropout: drop比率
-#     :param mask: 是否mask
-#     :return: 经自注意力机制计算后的值
-#     """
-#     d_k = query.size(-1)  # 防止softmax未来求梯度消失时的d_k
-#     # Q,K相似度计算公式：\frac{Q^TK}{\sqrt{d_k}}
-#     scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)  # Q,K相似度计算
-#     # 判断是否要mask，注：mask的操作在QK之后，softmax之前
-#     if mask is not None:
-#         """
-#         scores.masked_fill默认是按照传入的mask中为1的元素所在的索引，
-#         在scores中相同的的索引处替换为value，替换值为-1e9，即-(10^9)
-#         """
-#         # mask.cuda()
-#         # 进行mask操作，由于参数mask==0，因此替换上述mask中为0的元素所在的索引
-#
-#         scores = scores.masked_fill(mask == 0, -1e9)
-#
-#     self_attn_softmax = F.softmax(scores, dim=-1)  # 进行softmax
-#     # 判断是否要对相似概率分布进行dropout操作
-#     if dropout is not None:
-#         self_attn_softmax = dropout(self_attn_softmax)
-#
-#     # 注意：返回经自注意力计算后的值，以及进行softmax后的相似度（即相似概率分布）
-#     return torch.matmul(self_attn_softmax, value), self_attn_softmax
-
 def self_attention(query, key, value, dropout=None, mask=None):
     """
     自注意力计算
@@ -357,15 +324,15 @@ class S_Backbone_test(nn.Module):
         self.dropout = dropout
         # Layer 1
         # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 40), padding=(0,6))   # 10
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=8, kernel_size=(1, 40), padding=(0, 6))
-        self.conv1_2 = nn.Conv2d(in_channels=8, out_channels=4, kernel_size=(ch, 1))
-        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=5, kernel_size=(1, 40), padding=(0, 6))
+        self.conv1_2 = nn.Conv2d(in_channels=5, out_channels=10, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(10)
         self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(1, 20), padding=(0, 4), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=5, kernel_size=(1, 20), padding=(0, 4), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(5)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
 
     def forward(self, x):
@@ -383,7 +350,7 @@ class S_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 4 * 8)
+        x = x.reshape(-1, 5 * 8)
         return x
 
 class T_Backbone_test(nn.Module):
@@ -392,15 +359,15 @@ class T_Backbone_test(nn.Module):
         self.dropout = dropout
         # Layer 1
         # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 10), padding=(0,2))  # 10
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=2, kernel_size=(1, 10), padding=(0, 0))
-        self.conv1_2 = nn.Conv2d(in_channels=2, out_channels=4, kernel_size=(ch, 1))
-        self.batchnorm1 = nn.BatchNorm2d(4)
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=5, kernel_size=(1, 10), padding=(0, 0))
+        self.conv1_2 = nn.Conv2d(in_channels=5, out_channels=10, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(10)
         self.pooling1 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 2))
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)   # 10
-        self.conv2 = nn.Conv2d(in_channels=4, out_channels=4, kernel_size=(1, 10), padding=(0), bias=False)  # 10
-        self.batchnorm2 = nn.BatchNorm2d(4)
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=5, kernel_size=(1, 10), padding=(0), bias=False)  # 10
+        self.batchnorm2 = nn.BatchNorm2d(5)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 4))
 
     def forward(self, x):
@@ -418,7 +385,7 @@ class T_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 4 * 8)
+        x = x.reshape(-1, 5 * 8)
         return x
 
 

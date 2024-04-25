@@ -36,8 +36,8 @@ CONSTANT = {
             'Right Parietal':['CP4', 'CP6', 'P4'],     # 右顶叶
         },
         'temporal_ch_group':{
-            '1':[i for i in range(8)],
-            '2':[i for i in range(8,16)],
+            '1':[i for i in range(15)],
+            '2':[i for i in range(15,30)],
         },
         'temporal_ch_region':{
             '1':[i for i in range(100)],

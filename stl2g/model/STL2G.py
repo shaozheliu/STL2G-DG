@@ -406,15 +406,15 @@ class Temporal_Embedding(nn.Module):
             super(Temporal_Embedding, self).__init__()
             self.dropout = dropout
             # Layer 1
-            self.conv1 = nn.Conv2d(in_channels=1, out_channels=out_channels, kernel_size=(1, 30), padding=0)
+            self.conv1 = nn.Conv2d(in_channels=1, out_channels=out_channels, kernel_size=(1, 30), stride=(1,3), padding=(0,10))
 
             # Layer 2
-            self.conv2 = nn.Conv2d(out_channels, out_channels, (in_channels, 1), bias=False)
+            self.conv2 = nn.Conv2d(out_channels, out_channels, (in_channels, 1), padding=(0,5),bias=False)
             self.batchnorm = nn.BatchNorm2d(out_channels)
-            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
+            self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 2))
 
             # Layer 3
-            self.conv3 = nn.Conv1d(out_channels, out_channels, kernel_size=6, stride=4)
+            self.conv3 = nn.Conv1d(out_channels, out_channels, kernel_size=10, stride=2, padding=4)
 
     def forward(self, x):
         x = x.unsqueeze(1)
@@ -614,7 +614,7 @@ class STL2G(nn.Module):
 
         ## Temporal_emb
         self.temporal_embedding = nn.Sequential()
-        self.temporal_embedding.add_module('Temporal_embedding', Temporal_Embedding(dropout))
+        self.temporal_embedding.add_module('Temporal_embedding', Temporal_Embedding(30, d_model_dict['temporal'], dropout))
         # self.temporal_embedding.add_module('Temporal_embedding', shallow_conv())
 
         ## Spatial-Temporal Local to Global ##
@@ -660,23 +660,23 @@ if __name__ == "__main__":
     d_head = 2
     s_d_model = 62
     t_d_model = 22
-    d_model_dict = {'spatial':35, 'temporal':20}
-    head_dict = {'spatial':5, 'temporal':2}
+    d_model_dict = {'spatial':30, 'temporal':30}
+    head_dict = {'spatial':5, 'temporal':5}
     d_ff = 128
     ff_hide = 1024
     n_layers = 3
     dropout = 0.1
     n_heads = 4
-    spatial_local_dict = {'1': [0, 2, 3, 4], '2': [6, 1, 7, 13], '3': [18, 19], '4': [5, 11, 17, 12], '5': [8, 9, 10, 14, 15, 16]}
+    spatial_local_dict = {'1': [0, 2, 3, 4], '2': [6, 1, 7, 13], '3': [i for i in range(18,30)], '4': [5, 11, 17, 12], '5': [8, 9, 10, 14, 15, 16]}
     temp_local_dict = {
             '1':[i for i in range(10)],
-            '2':[i for i in range(10,20)],
-            '3':[i for i in range(20,30)],
-            '4':[i for i in range(30,35)]
+            '2':[i for i in range(10,15)],
+            '3':[i for i in range(15,30)],
         }
-    model = Temporal_Embedding(30, 30, 0.3)
-    res = model(inp)
-    # model = STL2G(d_model_dict, head_dict, d_ff, n_layers, local_dict, temp_local_dict, dropout, clf_class=2, domain_class=8)
+    # model = Temporal_Embedding(30, 30, 0.3)
+    model = STL2G(d_model_dict, head_dict, d_ff, n_layers, spatial_local_dict, temp_local_dict, dropout, clf_class=2,
+                  domain_class=8)
+    res,res2 = model(inp, 0.01)
 
     print(model)
-    out1, out2  = model(inp, 0.01)
+
