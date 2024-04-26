@@ -324,16 +324,16 @@ class S_Backbone_test(nn.Module):
         self.dropout = dropout
         # Layer 1
         # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 40), padding=(0,6))   # 10
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=5, kernel_size=(1, 40), padding=(0, 6))
-        self.conv1_2 = nn.Conv2d(in_channels=5, out_channels=10, kernel_size=(ch, 1))
-        self.batchnorm1 = nn.BatchNorm2d(10)
-        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 4))
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=20, kernel_size=(1, 40), padding=(0))
+        self.conv1_2 = nn.Conv2d(in_channels=20, out_channels=40, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(40)
+        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 10), stride=(1, 6))
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=8, kernel_size=(1, 20), padding=(0, 4), bias=False)
-        self.batchnorm2 = nn.BatchNorm2d(8)
-        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
+        self.conv2 = nn.Conv2d(in_channels=40, out_channels=5, kernel_size=(1, 20), padding=(0), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(5)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
 
     def forward(self, x):
         x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
@@ -350,7 +350,7 @@ class S_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 8 * 8)
+        x = x.reshape(-1, 5 * 6)
         return x
 
 class T_Backbone_test(nn.Module):
@@ -359,16 +359,16 @@ class T_Backbone_test(nn.Module):
         self.dropout = dropout
         # Layer 1
         # self.conv1 = nn.Conv2d(in_channels=1, out_channels=4, kernel_size=(1, 10), padding=(0,2))  # 10
-        self.conv1 = nn.Conv2d(in_channels=1, out_channels=5, kernel_size=(1, 10), padding=(0, 0))
-        self.conv1_2 = nn.Conv2d(in_channels=5, out_channels=10, kernel_size=(ch, 1))
-        self.batchnorm1 = nn.BatchNorm2d(10)
-        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 2))
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, 10), padding=(0,0))
+        self.conv1_2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(ch, 1))
+        self.batchnorm1 = nn.BatchNorm2d(20)
+        self.pooling1 = nn.AvgPool2d(kernel_size=(1, 12), stride=(1, 4))
 
         # Layer 2
         # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 5), padding=(0), bias=False)   # 10
-        self.conv2 = nn.Conv2d(in_channels=10, out_channels=8, kernel_size=(1, 10), padding=(0), bias=False)  # 10
-        self.batchnorm2 = nn.BatchNorm2d(8)
-        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 5), stride=(1, 4))
+        self.conv2 = nn.Conv2d(in_channels=20, out_channels=5, kernel_size=(1, 4), padding=(0), bias=False)  # 10
+        self.batchnorm2 = nn.BatchNorm2d(5)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 6), stride=(1, 2))
 
     def forward(self, x):
         x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
@@ -385,7 +385,7 @@ class T_Backbone_test(nn.Module):
         x = F.elu(x)
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
-        x = x.reshape(-1, 8 * 8)
+        x = x.reshape(-1, 5 * 6)
         return x
 
 
@@ -639,6 +639,29 @@ class L2GNet(nn.Module):
 
 
 
+class L2GNet_param(nn.Module):
+    def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+                  clf_class=4, domain_class=8):
+        super(L2GNet_param, self).__init__()
+        self.linear_dim = (len(spatial_div_dict) + len(temporal_div_dict)) * d_model_dic['st_fusion']
+        ## Spatial-Temporal Local to Global ##
+        self.L2G = nn.Sequential()
+        self.L2G.add_module('L2G', Local_Encoder(spatial_div_dict, temporal_div_dict, d_model_dic,
+                                                            head_dic, d_ff, n_layers, dropout))
+        self.L2G.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
+        self.L2G.add_module('c_bn1', nn.BatchNorm1d(8))
+        self.L2G.add_module('c_relu1', nn.ReLU(True))
+        self.L2G.add_module('c_drop1', nn.Dropout(dropout))
+        self.L2G.add_module('c_fc2', nn.Linear(8, clf_class))
+
+
+
+    def forward(self, x):
+        ret = self.L2G(x)  # 2, ch, 62
+
+        return ret
+
+
 if __name__ == "__main__":
     inp = torch.autograd.Variable(torch.randn(2, 30, 400))
     s_division = {
@@ -653,9 +676,9 @@ if __name__ == "__main__":
         '4':[i for i in range(300,400)],
     }
     d_model_dic = {
-        'spatial':80,
-        'temporal':80,
-        'st_fusion':80
+        'spatial':30,
+        'temporal':30,
+        'st_fusion':30
     }
     head_dic = {
         'spatial': 1,
@@ -667,7 +690,7 @@ if __name__ == "__main__":
     n_layers = 2
     dropout = 0.3
     # model = Local_Encoder(s_division, t_divison, d_model_dic, head_dic, d_ff, n_layers, dropout)
-    model = L2GNet(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+    model = L2GNet_param(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
                   clf_class=4, domain_class=8)
-    res = model(inp, 0.1)
+    res = model(inp)
 

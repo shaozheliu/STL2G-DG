@@ -60,17 +60,17 @@ config = {
                     'epochs': 200,
                     'dropout':0.3,
                     'd_model_dict' :{
-                        'spatial':64,
-                        'temporal':64,
-                        'st_fusion':64
+                        'spatial':30,
+                        'temporal':30,
+                        'st_fusion':30
                         },
                     'head_dict' :{
                         'spatial': 2,
                          'temporal': 2,
                         'st_fusion':2
                     },
-                    'd_ff': 1,
-                    'n_layers': 2,
+                    'd_ff': 2,
+                    'n_layers': 4,
                     'alpha_scala': 1
             },
         },

@@ -121,6 +121,9 @@ class Temporal_Local_Conv(nn.Module):
         return encoded_regions
 
 
+
+
+
 class BlackNet(nn.Module):
     def __init__(self, spatial_div_dict, temporal_div_dict, dropout, nb_class):
         super(BlackNet, self).__init__()
@@ -138,6 +141,49 @@ class BlackNet(nn.Module):
         ret = self.fc1(ret)
         return  ret
 
+
+
+
+
+class B_L2GNet(nn.Module):
+    def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+                  clf_class=4, domain_class=8):
+        super(B_L2GNet, self).__init__()
+        self.linear_dim = (len(spatial_div_dict) + len(temporal_div_dict)) * d_model_dic['st_fusion']
+        ## Spatial-Temporal Local to Global ##
+        self.L2G = nn.Sequential()
+        self.L2G.add_module('L2G', Local_Encoder(spatial_div_dict, temporal_div_dict, d_model_dic,
+                                                            head_dic, d_ff, n_layers, dropout))
+
+        # Class classifier layer
+        self.class_classifier = nn.Sequential()
+        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
+        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(8))
+        self.class_classifier.add_module('c_relu1', nn.ReLU(True))
+        self.class_classifier.add_module('c_drop1', nn.Dropout(dropout))
+        self.class_classifier.add_module('c_fc2', nn.Linear(8, clf_class))
+        #
+        # Domain classifier
+        self.domain_classifier = nn.Sequential()
+        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 8))
+        # self.domain_classifier.add_module('d_fc1', nn.Linear(4840, 32))
+        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(8))
+        self.domain_classifier.add_module('d_relu1', nn.ReLU(True))
+        self.domain_classifier.add_module('d_drop1', nn.Dropout(dropout))
+        self.domain_classifier.add_module('d_fc2', nn.Linear(8, domain_class))
+
+
+    def forward(self, x, alpha):
+        x = self.L2G(x)  # 2, ch, 62
+        # feature = self.temporal_L_to_G(x)
+        ### channel 维度的加权 to-Global
+        # [2,22,24]
+        # feature = x.view(-1,x.shape[1] * x.shape[2])  # 将维度拉平
+        # feature = torch.mean(x, 1)
+        reverse_feature = ReverseLayerF.apply(x, alpha)
+        class_output = self.class_classifier(x)
+        domain_output = self.domain_classifier(reverse_feature)
+        return class_output, domain_output
 
 
 if __name__ == "__main__":
