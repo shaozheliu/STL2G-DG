@@ -13,7 +13,7 @@ from sklearn.metrics import accuracy_score, cohen_kappa_score, precision_score, 
 import torch.utils.data
 from experiments.config import config
 from sklearn.model_selection import LeaveOneOut
-from stl2g.model.L2GNet import L2GNet_param
+from stl2g.model.EEGNet import EEGNet
 
 base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
@@ -38,7 +38,7 @@ def setup_seed(seed):
     torch.backends.cudnn.deterministic = True
 
 
-def Black_prepare_training(spatial_div_dict, temporal_div_dict, dropout, lr,
+def EEGNet_prepare_training(spatial_div_dict, temporal_div_dict, dropout, lr,
                   clf_class):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = BlackNet(spatial_div_dict, temporal_div_dict, dropout, clf_class).to(device)
@@ -48,16 +48,6 @@ def Black_prepare_training(spatial_div_dict, temporal_div_dict, dropout, lr,
     criterion_domain = nn.CrossEntropyLoss()
     return model, optimizer, lr_scheduler, criterion, criterion_domain, device
 
-def L2G_prepare_training(spatial_div_dict, temporal_div_dict, d_model_dic,  head_dic, d_ff, n_layers, dropout, lr,
-                  clf_class, domain_class):
-    device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = L2GNet_param(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class, domain_class).to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
-    lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
-    criterion = nn.CrossEntropyLoss()
-    criterion_domain = nn.CrossEntropyLoss()
-    return model, optimizer, lr_scheduler, criterion, criterion_domain, device
 
 
 # 一次epoch的训练函数
