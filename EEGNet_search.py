@@ -41,7 +41,7 @@ def setup_seed(seed):
 def EEGNet_prepare_training(spatial_div_dict, temporal_div_dict, dropout, lr,
                   clf_class):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = BlackNet(spatial_div_dict, temporal_div_dict, dropout, clf_class).to(device)
+    model = EEGNet(spatial_div_dict, temporal_div_dict, dropout, clf_class).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
     criterion = nn.CrossEntropyLoss()

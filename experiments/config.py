@@ -7,7 +7,7 @@ config = {
                     'lr': 0.001,
                     'batch_size': 300,
                     'epochs': 300,
-                    'dropout':0.3,
+                    'dropout':0.001,
             },
         },
         'DeepConvNet': {
@@ -29,7 +29,7 @@ config = {
                     'lr': 0.001,
                     'batch_size': 300,
                     'epochs': 300,
-                    'dropout':0.3,
+                    'dropout':0.001,
             },
         },
         'STL2G': {
@@ -55,10 +55,10 @@ config = {
                     'data_format': 'NDCT',
                     'num_class': 2,
                     'domain_class': 18,
-                    'lr': 0.0015,
+                    'lr': 0.00190435,
                     'batch_size': 250,
                     'epochs': 200,
-                    'dropout':0.3,
+                    'dropout':0.00144433,
                     'd_model_dict' :{
                         'spatial':30,
                         'temporal':30,
@@ -70,7 +70,7 @@ config = {
                         'st_fusion':2
                     },
                     'd_ff': 2,
-                    'n_layers': 4,
+                    'n_layers': 2,
                     'alpha_scala': 1
             },
         },
