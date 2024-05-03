@@ -20,7 +20,6 @@ from stl2g.preprocessing.OpenBMI import raw
 from stl2g.utils import get_loaders
 from stl2g.model.L2GNet import L2GNet
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -209,6 +208,7 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
+    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     model_type = 'L2GNet'
     dataSet = 'OpenBMI'
     path = CONSTANT[dataSet]['raw_path']

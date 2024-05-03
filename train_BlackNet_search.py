@@ -29,7 +29,7 @@ import matplotlib.pyplot as plt
 from ray.tune.schedulers import AsyncHyperBandScheduler
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -103,8 +103,8 @@ def train_iris(hyper_parms):
     batch_size = config[model_type][dataSet]['batch_size']
     # batch_size = 10
     # 加载数据
-    train_subs = [i for i in range(1,10)]
-    test_sub = [i for i in range(1,10)]
+    train_subs = [i for i in range(1,52)]
+    test_sub = [i for i in range(52,54)]
     sel_chs = CONSTANT[dataSet]['sel_chs']
     id_ch_selected = raw.chanel_selection(sel_chs)
     div_id = raw.channel_division(spatial_local_dict)
@@ -139,7 +139,7 @@ def train_iris(hyper_parms):
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
-
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     model_type = 'L2GNet'
     dataSet = 'OpenBMI'
     log_path = f'rayResults/{dataSet}/{model_type}'

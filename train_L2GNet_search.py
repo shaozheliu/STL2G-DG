@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from ray.tune.schedulers import AsyncHyperBandScheduler
 
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 def setup_seed(seed):
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
@@ -148,8 +148,8 @@ if __name__ == '__main__':
 
     # 参数搜索空间,在16，32，64中选择hiddenLayer
     hyper_parms = {
-            'd_ff': tune.grid_search([1, 4, 6]),
-            'n_layers': tune.grid_search([1, 4, 6]),
+            'd_ff': tune.grid_search([1,2,3, 4,5, 6]),
+            'n_layers': tune.grid_search([1,2, 3,4,5, 6]),
             'dropout' : tune.loguniform(0.001, 0.003),
             'lr': tune.loguniform(1e-4, 1e-1),
 

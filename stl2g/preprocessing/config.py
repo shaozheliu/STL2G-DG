@@ -1,8 +1,8 @@
 CONSTANT = {
     'OpenBMI': {
         'raw_path': '/home/alk/L2G-MI/datasets/OpenBMI/raw', # raw data path
-        # 'n_subjs': 54,
-        'n_subjs':20,  # 我想用的
+        'n_subjs': 54,
+        # 'n_subjs':20,  # 我想用的
         'n_trials_2_class': 100,
         'n_trials_3_class': 150,
         'n_chs': 62,
