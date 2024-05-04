@@ -6,8 +6,8 @@ config = {
                     'num_class': 2,
                     'lr': 0.001,
                     'batch_size': 300,
-                    'epochs': 300,
-                    'dropout':0.001,
+                    'epochs': 200,
+                    'dropout':0.002,
             },
         },
         'DeepConvNet': {
@@ -18,7 +18,7 @@ config = {
                     'lr': 0.001,
                     'batch_size': 300,
                     'epochs': 300,
-                    'dropout':0.3,
+                    'dropout':0.003,
             },
         },
         'ShallowNet': {

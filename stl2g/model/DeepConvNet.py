@@ -105,8 +105,8 @@ class DeepConvNet(nn.Module):
         return x
 
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 20, 1000))
-    model = DeepConvNettest(20, dropout=0.2, nb_class=2)
+    inp = torch.autograd.Variable(torch.randn(2, 30, 1000))
+    model = DeepConvNettest(30, dropout=0.2, nb_class=2)
     # model = DeepConvNet(20, dropout=0.2, nb_class=2)
 
     output = model(inp)

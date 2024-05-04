@@ -19,9 +19,6 @@ class Shallow_Net(nn.Module):
 
         self.conv3 = nn.Conv2d(40, 20, kernel_size=(1,4), stride=(1,8))
         # FC Layer
-        # NOTE: This dimension will depend on the number of timestamps per sample in your data.
-        # I have 120 timepoints.
-        # self.fc1 = nn.Linear(137*40, self.nb_class)
         self.fc1 = nn.Linear(460, 2)
 
     def forward(self, x):

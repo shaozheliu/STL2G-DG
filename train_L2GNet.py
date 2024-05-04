@@ -191,7 +191,7 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
         print(summary(model, input_size=[(train_X.shape[1], train_X.shape[2]), (1, alpha_scala)]))
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
         torch.save(best_model.state_dict(),
-                   f'checkpoints/{dataSet}/{model_name}/exp_{model_name}_dropout:{dropout}_attdim:{d_model_dict}_encoder_num:{n_layers}_lr:{lr}_fold:{i}.pth')
+                   f'checkpoints/{dataSet}/{model_name}/{d_model_dict}/exp_{model_name}_dropout:{dropout}_attdim:{d_model_dict}_encoder_num:{n_layers}_lr:{lr}_fold:{i}.pth')
         acc, ka, prec, recall, roc_auc = test_evaluate(best_model, device, test_X, test_y)
         acc_ls.append(acc)
         ka_ls.append(ka)
@@ -208,7 +208,7 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
-    os.environ["CUDA_VISIBLE_DEVICES"] = "3"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "2"
     model_type = 'L2GNet'
     dataSet = 'OpenBMI'
     path = CONSTANT[dataSet]['raw_path']
