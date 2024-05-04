@@ -123,9 +123,13 @@ def train_iris(dataSet, model_type):
         output_L2G = model.L2G(input_data)
         outfeature = output_L2G.detach().cpu().numpy()
     elif model_type == 'EEGNet':
-        model, optimizer, lr_scheduler, criterion, device, criterion_domain = EEGNet_prepare_training(num_ch, lr,
-                                                                                                      dropout)
+        model, optimizer, lr_scheduler, criterion, device, criterion_domain = EEGNet_prepare_training(num_ch, lr, dropout)
         input_data = torch.from_numpy(train_X).to(device, dtype=torch.float32)
+        model_path = '/home/alk/L2G-MI/checkpoints/OpenBMI/L2GNet/test/test.pth'
+        model.load_state_dict(torch.load(model_path))
+        model.eval()
+        output_EEG = model.pooling3(input_data)
+        outfeature = output_EEG.detach().cpu().numpy()
 
     tsne2d = TSNE(n_components=2, init='pca', random_state=0)
     X_tsne_2d = tsne2d.fit_transform(outfeature)
@@ -140,6 +144,6 @@ def train_iris(dataSet, model_type):
 
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
-    model_type = 'L2GNet'
+    model_type = 'EEGNet'
     dataSet = 'OpenBMI'
     train_iris(dataSet, model_type)
