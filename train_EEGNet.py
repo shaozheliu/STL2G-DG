@@ -159,6 +159,8 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
         model, optimizer, lr_scheduler, criterion, device, criterion_domain = EEGNet_prepare_training(org_ch, lr, dropout)
         print(summary(model, input_size=[(train_X.shape[1], train_X.shape[2])]))
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
+        torch.save(best_model.state_dict(),
+                   f'checkpoints/{dataSet}/{model_name}/exp_{model_name}_dropout:{dropout}_lr:{lr}_fold:{i}.pth')
         acc, ka, prec, recall, roc_auc = test_evaluate(best_model, device, test_X, test_y, model_name)
         acc_ls.append(acc)
         ka_ls.append(ka)
@@ -191,6 +193,11 @@ if __name__ == '__main__':
     for directory in [log_path]:
         if not os.path.exists(directory):
             os.makedirs(directory)
+    ckpt_path = f'checkpoints/{dataSet}/{model_type}'
+    for directory in [ckpt_path]:
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
     outputfile = open(
         f'{log_path}/exp_{model_type}_numsubjects_{subject}_dropout{dropout}_numch{num_ch}.txt', 'w')
     sys.stdout = outputfile

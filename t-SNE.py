@@ -80,13 +80,25 @@ def train_iris(dataSet, model_type):
     # 参数
     spatial_local_dict = CONSTANT[dataSet]['spatial_ch_group']
     temporal_div_dict = CONSTANT[dataSet]['temporal_ch_region']
-    d_model_dict = config[model_type][dataSet]['d_model_dict']
-    head_dict = config[model_type][dataSet]['head_dict']
+    try:
+        d_model_dict = config[model_type][dataSet]['d_model_dict']
+    except KeyError:
+        d_model_dict = None
+    try:
+        head_dict = config[model_type][dataSet]['head_dict']
+    except KeyError:
+        head_dict = None
     path = CONSTANT[dataSet]['raw_path']
     clf_class = config[model_type][dataSet]['num_class']
     domain_class = CONSTANT[dataSet]['n_subjs']
-    d_ff = config[model_type][dataSet]['d_ff']
-    n_layers = config[model_type][dataSet]['n_layers']
+    try:
+        d_ff = config[model_type][dataSet]['d_ff']
+    except KeyError:
+        d_ff = None
+    try:
+        n_layers = config[model_type][dataSet]['n_layers']
+    except KeyError:
+        n_layers = None
     batch_size = config[model_type][dataSet]['batch_size']
     lr = config[model_type][dataSet]['lr']
     dropout = config[model_type][dataSet]['dropout']
