@@ -47,6 +47,9 @@ def plot_embedding_2d(X, y, ax=None):
     # ax = plt.subplot(111)
     for i in range(X.shape[0]):
         ax.scatter(X[i, 0], X[i, 1], color=colors[i])
+        # 取消x轴和y轴坐标
+        ax.set_xticks([])
+        ax.set_yticks([])
         # 创建图例
     # legend_elements = [
     #         plt.Line2D([0], [0], marker='o', color='w', markerfacecolor='red', markersize=10, label='Label 0'),
@@ -224,25 +227,25 @@ def train_iris(dataSet, model_type):
                 else:
                     ax.set_title('OpenBMI', fontweight='bold')
                 plot_embedding_2d(X_raw[:, 0:2], train_y, ax)
-                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=10))
+                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=3))
             elif i == 1:
                 plot_embedding_2d(X_eeg[:, 0:2], train_y, ax)
-                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=10))
+                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=3))
                 if j == 0:
                     ax.set_ylabel('EEGNet', fontweight='bold')
             elif i == 2:
                 plot_embedding_2d(X_conv[:, 0:2], train_y, ax)
-                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=10))
+                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=3))
                 if j == 0:
                     ax.set_ylabel('DeepConvNet', fontweight='bold')
             elif i == 3:
                 plot_embedding_2d(X_shallow[:, 0:2], train_y, ax)
-                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=10))
+                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=3))
                 if j == 0:
                     ax.set_ylabel('ShallowNet', fontweight='bold')
             elif i == 4:
                 plot_embedding_2d(X_l2g[:, 0:2], train_y, ax)
-                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=10))
+                ax.text(0.05, 0.95, 'acc: 0.85\nauc: 0.92', transform=ax.transAxes, fontsize=15, verticalalignment='top', bbox=dict(facecolor='white', alpha=0.5, pad=3))
                 if j == 0:
                     ax.set_ylabel('L2GNet', fontweight='bold')
     # 创建共用的图例

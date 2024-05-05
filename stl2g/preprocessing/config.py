@@ -45,5 +45,49 @@ CONSTANT = {
             '3':[i for i in range(200,300)],
             '4':[i for i in range(300,400)],
         }   # L2G独享
+    },
+    'BCIIV2A':{
+        'raw_path': '/home/alk/L2G-MI/datasets/BCIIV2A/raw', # raw data path
+        'n_subjs':9,  # 我想用的
+        'n_trials': 144,
+        'n_trials_per_class': 72,
+        'n_chs': 20,
+        'orig_smp_freq': 250,                  # Original sampling frequency (Hz)
+        'new_smp_freq': 100,
+        'trial_len': 7,                        # 7s
+        'MI': {
+            'start': 2,                        # start at time = 2 s
+            'stop': 6,                         # stop at time = 6 s
+            'len': 4,                          # 4s
+        },
+        'orig_chs': ['FC3', 'FC1', 'FCz', 'FC2', 'FC4',
+                    'C5', 'C3', 'C1', 'Cz', 'C2', 'C4', 'C6',
+                    'CP3', 'CP1', 'CPz', 'CP2', 'CP4',
+                    'P1', 'Pz', 'P2'],
+        'sel_chs': ['FC3', 'FC1', 'FCz', 'FC2', 'FC4',
+                    'C5', 'C3', 'C1', 'Cz', 'C2', 'C4', 'C6',
+                    'CP3', 'CP1', 'CPz', 'CP2', 'CP4',
+                    'P1', 'Pz', 'P2'],
+        'spatial_ch_group':{
+            'Frontal Central': ['FC1', 'FC2', 'FCz'],  # 额叶
+            'Left Frontal': ['FC3'],  # 左额叶
+            'Right Frontal': ['FC4'], # 右额叶
+            'Central':['C1', 'Cz', 'C2'],                # 中央区
+            'Left Central':['C3', 'C5'],                 # 左中央区
+            'Right Central':['C4','C6'],                 # 右中央区
+            'Central Parietal': ['CP1', 'CPz', 'CP2', 'P1', 'Pz', 'P2'],  # 顶叶
+            'Left Parietal': ['CP3'],     # 左顶叶
+            'Right Parietal':['CP4'],     # 右顶叶
+        },
+        'temporal_ch_group':{
+            '1':[i for i in range(15)],
+            '2':[i for i in range(15,30)],
+        },
+        'temporal_ch_region':{
+            '1':[i for i in range(100)],
+            '2':[i for i in range(100,200)],
+            '3':[i for i in range(200,300)],
+            '4':[i for i in range(300,400)],
+        }
     }
 }

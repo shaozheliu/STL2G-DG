@@ -592,7 +592,61 @@ class Local_Encoder(nn.Module):
         ret = ret.reshape(-1, self.st_fusiondiv * self.d_model_dic['st_fusion'])
         return  ret
 
+class Local_Encoder_noS(nn.Module):
+    def __init__(self, spatial_div_dict, temporal_div_dict, d_model_dic, head_dic, d_ff, n_layers, dropout):
+        super(Local_Encoder_noS, self).__init__()
+        self.d_model_dic = d_model_dic
+        # 空间维度backbone分块卷积
+        self.Local_temporal_conved = Temporal_Local_Conv(temporal_div_dict, dropout)
 
+        # 空间区域的Attention
+        t_region_att = MultiHeadAttention(head_dic['temporal'], d_model_dic['temporal'], dropout)
+        t_feed_forward = FeedForward(d_model_dic['temporal'], d_ff)
+        self.t_encoder_region = Encoder(n_layers, EncoderLayer(d_model_dic['temporal'],
+                                                               deepcopy(t_region_att), deepcopy(t_feed_forward)))
+
+        # 时空特征区域特征融合fusion模块
+        self.st_fusiondiv = len(temporal_div_dict)
+
+
+
+
+    def forward(self, x):
+        temp2 = self.Local_temporal_conved(x)
+        T_Region_tensor = torch.cat(temp2, dim=1)
+        Temporal_encoding = self.t_encoder_region(T_Region_tensor, None)
+        ret = Temporal_encoding
+        ret = ret.reshape(-1, self.st_fusiondiv * self.d_model_dic['st_fusion'])
+        return  ret
+
+class Local_Encoder_noT(nn.Module):
+    def __init__(self, spatial_div_dict, temporal_div_dict, d_model_dic, head_dic, d_ff, n_layers, dropout):
+        super(Local_Encoder_noT, self).__init__()
+        self.d_model_dic = d_model_dic
+        # 空间维度backbone分块卷积
+        self.Local_spatial_conved = Spatial_Local_Conv(spatial_div_dict, dropout)
+
+        # 空间区域的Attention
+        s_region_att = MultiHeadAttention(head_dic['spatial'], d_model_dic['spatial'], dropout)
+        s_feed_forward = FeedForward(d_model_dic['spatial'], d_ff)
+        self.s_encoder_region = Encoder(n_layers, EncoderLayer(d_model_dic['spatial'],
+                                                          deepcopy(s_region_att), deepcopy(s_feed_forward)))
+
+
+        # 时空特征区域特征融合fusion模块
+        self.st_fusiondiv = len(spatial_div_dict)
+
+
+
+    def forward(self, x):
+        temp1 = self.Local_spatial_conved(x)
+        # temp2 = self.Local_temporal_conved(x)
+        S_Region_tensor = torch.cat(temp1, dim=1)
+        # T_Region_tensor = torch.cat(temp2, dim=1)
+        Spatial_encoding = self.s_encoder_region(S_Region_tensor, None)
+        ret = Spatial_encoding
+        ret = ret.reshape(-1, self.st_fusiondiv * self.d_model_dic['st_fusion'])
+        return  ret
 
 
 
@@ -637,6 +691,88 @@ class L2GNet(nn.Module):
         domain_output = self.domain_classifier(reverse_feature)
         return class_output, domain_output
 
+
+
+class SL2G_DG(nn.Module):
+    def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+                  clf_class=4, domain_class=8):
+        super(SL2G_DG, self).__init__()
+        self.linear_dim = len(spatial_div_dict) * d_model_dic['st_fusion']
+        ## Spatial-Temporal Local to Global ##
+        self.L2G = nn.Sequential()
+        self.L2G.add_module('L2G', Local_Encoder_noT(spatial_div_dict, temporal_div_dict, d_model_dic,
+                                                            head_dic, d_ff, n_layers, dropout))
+
+        # Class classifier layer
+        self.class_classifier = nn.Sequential()
+        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
+        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(8))
+        self.class_classifier.add_module('c_relu1', nn.ReLU(True))
+        self.class_classifier.add_module('c_drop1', nn.Dropout(dropout))
+        self.class_classifier.add_module('c_fc2', nn.Linear(8, clf_class))
+        #
+        # Domain classifier
+        self.domain_classifier = nn.Sequential()
+        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 8))
+        # self.domain_classifier.add_module('d_fc1', nn.Linear(4840, 32))
+        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(8))
+        self.domain_classifier.add_module('d_relu1', nn.ReLU(True))
+        self.domain_classifier.add_module('d_drop1', nn.Dropout(dropout))
+        self.domain_classifier.add_module('d_fc2', nn.Linear(8, domain_class))
+
+
+    def forward(self, x, alpha):
+        x = self.L2G(x)  # 2, ch, 62
+        # feature = self.temporal_L_to_G(x)
+        ### channel 维度的加权 to-Global
+        # [2,22,24]
+        # feature = x.view(-1,x.shape[1] * x.shape[2])  # 将维度拉平
+        # feature = torch.mean(x, 1)
+        reverse_feature = ReverseLayerF.apply(x, alpha)
+        class_output = self.class_classifier(x)
+        domain_output = self.domain_classifier(reverse_feature)
+        return class_output, domain_output
+
+
+class TL2G_DG(nn.Module):
+    def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+                  clf_class=4, domain_class=8):
+        super(TL2G_DG, self).__init__()
+        self.linear_dim = len(temporal_div_dict) * d_model_dic['st_fusion']
+        ## Spatial-Temporal Local to Global ##
+        self.L2G = nn.Sequential()
+        self.L2G.add_module('L2G', Local_Encoder_noS(spatial_div_dict, temporal_div_dict, d_model_dic,
+                                                            head_dic, d_ff, n_layers, dropout))
+
+        # Class classifier layer
+        self.class_classifier = nn.Sequential()
+        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
+        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(8))
+        self.class_classifier.add_module('c_relu1', nn.ReLU(True))
+        self.class_classifier.add_module('c_drop1', nn.Dropout(dropout))
+        self.class_classifier.add_module('c_fc2', nn.Linear(8, clf_class))
+        #
+        # Domain classifier
+        self.domain_classifier = nn.Sequential()
+        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 8))
+        # self.domain_classifier.add_module('d_fc1', nn.Linear(4840, 32))
+        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(8))
+        self.domain_classifier.add_module('d_relu1', nn.ReLU(True))
+        self.domain_classifier.add_module('d_drop1', nn.Dropout(dropout))
+        self.domain_classifier.add_module('d_fc2', nn.Linear(8, domain_class))
+
+
+    def forward(self, x, alpha):
+        x = self.L2G(x)  # 2, ch, 62
+        # feature = self.temporal_L_to_G(x)
+        ### channel 维度的加权 to-Global
+        # [2,22,24]
+        # feature = x.view(-1,x.shape[1] * x.shape[2])  # 将维度拉平
+        # feature = torch.mean(x, 1)
+        reverse_feature = ReverseLayerF.apply(x, alpha)
+        class_output = self.class_classifier(x)
+        domain_output = self.domain_classifier(reverse_feature)
+        return class_output, domain_output
 
 
 class L2GNet_param(nn.Module):
@@ -690,7 +826,7 @@ if __name__ == "__main__":
     n_layers = 2
     dropout = 0.3
     # model = Local_Encoder(s_division, t_divison, d_model_dic, head_dic, d_ff, n_layers, dropout)
-    model = L2GNet_param(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+    model = TL2G_DG(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
                   clf_class=4, domain_class=8)
-    res = model(inp)
+    res = model(inp, 0.01)
 

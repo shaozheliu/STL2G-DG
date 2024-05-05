@@ -17,9 +17,8 @@ base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
 from stl2g.preprocessing.config import CONSTANT
 from stl2g.preprocessing.OpenBMI import raw
-from stl2g.preprocessing.BCIIV2A import raw as raw_bci2a
 from stl2g.utils import get_loaders
-from stl2g.model.L2GNet import L2GNet
+from stl2g.model.L2GNet import TL2G_DG
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -32,7 +31,7 @@ def setup_seed(seed):
 def L2GNet_prepare_training(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout, lr,
                   clf_class, domain_class):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-    model = L2GNet(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+    model = TL2G_DG(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
                   clf_class, domain_class).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     # optimizer = torch.optim.SGD(model.parameters(), lr=lr)
@@ -170,15 +169,9 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
         div_id = raw.channel_division(spatial_local_dict)
         spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
         # 加载数据
-        if dataSet == 'OpenBMI':
-            train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, clf_class,
+        train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, clf_class,
                                                                        id_ch_selected, 0.1)
-            test_X, test_y, test_domain_y = raw.load_data_batchs(path, session, test_sub, clf_class, id_ch_selected, 0.1)
-        elif dataSet == 'BCIIV2A':
-            train_X, train_y, train_domain_y = raw_bci2a.load_data_batchs(path, session, train_subs, clf_class,
-                                                                       id_ch_selected, 100)
-            test_X, test_y, test_domain_y = raw_bci2a.load_data_batchs(path, session, test_sub, clf_class, id_ch_selected,
-                                                                 100)
+        test_X, test_y, test_domain_y = raw.load_data_batchs(path, session, test_sub, clf_class, id_ch_selected, 0.1)
         # 数据标准化
         X_train_mean = train_X.mean(0)
         X_train_var = np.sqrt(train_X.var(0))
@@ -217,7 +210,7 @@ if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
     os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     model_type = 'L2GNet'
-    dataSet = 'BCIIV2A'
+    dataSet = 'OpenBMI'
     path = CONSTANT[dataSet]['raw_path']
     num_ch = len(CONSTANT[dataSet]['sel_chs'])
     batch_size = config[model_type][dataSet]['batch_size']
@@ -233,7 +226,7 @@ if __name__ == '__main__':
     alpha_scala = config[model_type][dataSet]['alpha_scala']
     spatial_local_dict = CONSTANT[dataSet]['spatial_ch_group']
     temporal_local_dict = CONSTANT[dataSet]['temporal_ch_region']
-
+    model_type = 'TL2GDG'
     setup_seed(1025)
     # subject = 3
     session = 1
