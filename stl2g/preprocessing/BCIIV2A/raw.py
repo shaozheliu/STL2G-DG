@@ -14,6 +14,8 @@ orig_chs = CONSTANT['orig_chs']
 trial_len = CONSTANT['trial_len']
 orig_smp_freq = CONSTANT['orig_smp_freq']
 path = CONSTANT['raw_path']
+start = CONSTANT['MI']['start']
+stop = CONSTANT['MI']['stop']
 
 def read_raw(PATH, subject, training, num_class, id_chosen_chs):
     data = np.zeros((n_trials, n_chs, window_len))

@@ -30,10 +30,10 @@ def setup_seed(seed):
 
 
 def L2GNet_prepare_training(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout, lr,
-                  clf_class, domain_class):
+                  clf_class, domain_class, ch):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = L2GNet(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class, domain_class).to(device)
+                  clf_class, domain_class, ch).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     # optimizer = torch.optim.SGD(model.parameters(), lr=lr)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
@@ -166,9 +166,9 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
         test_sub = [subidx[sub_idx] for sub_idx in test_idx]
         print(f'train subjects are: {train_subs}, test subject is: {test_sub}')
         sel_chs = CONSTANT[dataSet]['sel_chs']
-        id_ch_selected = raw.chanel_selection(sel_chs)
-        div_id = raw.channel_division(spatial_local_dict)
-        spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
+        id_ch_selected = raw_bci2a.chanel_selection(sel_chs)
+        div_id = raw_bci2a.channel_division(spatial_local_dict)
+        spatial_region_split = raw_bci2a.region_id_seg(div_id, id_ch_selected)
         # 加载数据
         if dataSet == 'OpenBMI':
             train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, clf_class,
@@ -194,7 +194,7 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
         dataset = {'dataset_sizes': {'train': train_sample, 'test': test_sample}}
         model, optimizer, lr_scheduler, criterion, device, criterion_domain = \
             L2GNet_prepare_training(spatial_region_split, temporal_local_dict ,d_model_dic, head_dic, d_ff, n_layers, dropout, lr,
-                  clf_class, domain_class)
+                  clf_class, domain_class, num_ch)
         print(summary(model, input_size=[(train_X.shape[1], train_X.shape[2]), (1, alpha_scala)]))
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
         torch.save(best_model.state_dict(),

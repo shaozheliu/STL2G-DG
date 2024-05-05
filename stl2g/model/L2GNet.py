@@ -528,14 +528,14 @@ class Spatial_Local_Conv(nn.Module):
         return encoded_regions
 
 class Temporal_Local_Conv(nn.Module):
-    def __init__(self, division, dropout):
+    def __init__(self, division, dropout, ch):
         super(Temporal_Local_Conv, self).__init__()
         self.division = division
         self.dropout = dropout
 
         for i in self.division.keys():
             # 这里的参数传的是总channel数
-            rigion_conv = T_Backbone_test(30, dropout)
+            rigion_conv = T_Backbone_test(ch, dropout)
             setattr(self, f'T_region_conv{i}', rigion_conv)
 
     def forward(self, x):
@@ -551,12 +551,12 @@ class Temporal_Local_Conv(nn.Module):
 
 
 class Local_Encoder(nn.Module):
-    def __init__(self, spatial_div_dict, temporal_div_dict, d_model_dic, head_dic, d_ff, n_layers, dropout):
+    def __init__(self, spatial_div_dict, temporal_div_dict, d_model_dic, head_dic, d_ff, n_layers, dropout, ch):
         super(Local_Encoder, self).__init__()
         self.d_model_dic = d_model_dic
         # 空间维度backbone分块卷积
         self.Local_spatial_conved = Spatial_Local_Conv(spatial_div_dict, dropout)
-        self.Local_temporal_conved = Temporal_Local_Conv(temporal_div_dict, dropout)
+        self.Local_temporal_conved = Temporal_Local_Conv(temporal_div_dict, dropout, ch)
 
         # 空间区域的Attention
         s_region_att = MultiHeadAttention(head_dic['spatial'], d_model_dic['spatial'], dropout)
@@ -653,13 +653,13 @@ class Local_Encoder_noT(nn.Module):
 ##----------------------------- 模型整体骨干-----------------------------##
 class L2GNet(nn.Module):
     def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class=4, domain_class=8):
+                  clf_class=4, domain_class=8, ch = 20):
         super(L2GNet, self).__init__()
         self.linear_dim = (len(spatial_div_dict) + len(temporal_div_dict)) * d_model_dic['st_fusion']
         ## Spatial-Temporal Local to Global ##
         self.L2G = nn.Sequential()
         self.L2G.add_module('L2G', Local_Encoder(spatial_div_dict, temporal_div_dict, d_model_dic,
-                                                            head_dic, d_ff, n_layers, dropout))
+                                                            head_dic, d_ff, n_layers, dropout, ch))
 
         # Class classifier layer
         self.class_classifier = nn.Sequential()
@@ -799,11 +799,11 @@ class L2GNet_param(nn.Module):
 
 
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 30, 400))
+    inp = torch.autograd.Variable(torch.randn(2, 20, 400))
     s_division = {
         '1':[i for i in range(5)],
         '2':[i for i in range(5,15)],
-        '3':[i for i in range(15,30)],
+        '3':[i for i in range(15,20)],
     }
     t_divison = {
         '1':[i for i in range(100)],
@@ -826,7 +826,7 @@ if __name__ == "__main__":
     n_layers = 2
     dropout = 0.3
     # model = Local_Encoder(s_division, t_divison, d_model_dic, head_dic, d_ff, n_layers, dropout)
-    model = TL2G_DG(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
+    model = L2GNet(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
                   clf_class=4, domain_class=8)
     res = model(inp, 0.01)
 
