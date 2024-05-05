@@ -8,10 +8,12 @@ import torch.nn as nn
 from torchsummary import summary
 import tqdm
 import sys, time, copy
-from sklearn.metrics import accuracy_score, cohen_kappa_score, precision_score, recall_score, roc_auc_score,classification_report
+from sklearn.metrics import accuracy_score, cohen_kappa_score, precision_score, recall_score, roc_auc_score
 import torch.utils.data
 from experiments.config import config
 from sklearn.model_selection import LeaveOneOut
+from experiments import utils as exp_utils
+
 
 base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
@@ -20,6 +22,7 @@ from stl2g.preprocessing.OpenBMI import raw
 from stl2g.preprocessing.BCIIV2A import raw as raw_bci2a
 from stl2g.utils import get_loaders
 from stl2g.model.L2GNet import L2GNet
+
 
 def setup_seed(seed):
     torch.manual_seed(seed)
@@ -132,25 +135,6 @@ def train_model_with_domain(model, criterion, criterion_domain, optimizer, sched
     return model
 
 
-
-def test_evaluate(model, device, X, y):
-    inputs = torch.from_numpy(X).type(torch.cuda.FloatTensor).to(device)
-    labels = torch.from_numpy(y).type(torch.cuda.FloatTensor).to(device)
-    outputs, domain_outputs = model(inputs, 0.1)
-    # te = torch.softmax(outputs, dim=1)
-    proba, preds = torch.max(torch.sigmoid(outputs), 1)
-    te = torch.softmax(outputs, 1)[:, 1]
-    labels = labels.cpu().numpy()
-    preds = preds.cpu().numpy()
-    te = te.detach().cpu().numpy()
-    acc = accuracy_score(labels, preds)
-    ka = cohen_kappa_score(labels, preds)
-    prec = precision_score(labels, preds, average='weighted')
-    recall = recall_score(labels, preds, average='weighted')
-    roc_auc = roc_auc_score(labels, te)
-    return acc, ka, prec, recall, roc_auc
-
-
 def subject_independent_validation(dataSet, subjects, spatial_local_dict, temporal_local_dict ,d_model_dic, head_dic, d_ff, n_layers,
                   clf_class, domain_class, batch_size, epochs, lr, model_name, dropout, alpha_scala):
     acc_ls = []
@@ -199,7 +183,7 @@ def subject_independent_validation(dataSet, subjects, spatial_local_dict, tempor
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
         torch.save(best_model.state_dict(),
                    f'checkpoints/{dataSet}/{model_name}/{d_model_dict}/exp_{model_name}_dropout:{dropout}_attdim:{d_model_dict}_encoder_num:{n_layers}_lr:{lr}_fold:{i}.pth')
-        acc, ka, prec, recall, roc_auc = test_evaluate(best_model, device, test_X, test_y)
+        acc, ka, prec, recall, roc_auc = exp_utils.test_evaluate(best_model, device, test_X, test_y, clf_class)
         acc_ls.append(acc)
         ka_ls.append(ka)
         prec_ls.append(prec)

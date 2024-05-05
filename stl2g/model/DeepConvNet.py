@@ -8,6 +8,7 @@ class DeepConvNettest(nn.Module):
         ##----------------ShallowNet 基准网络------------------#
         self.dropout = dropout
         self.nb_class = nb_class
+        self.ch = ch
         # Layer 1
         self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, 40), padding=0)
         self.batchnorm1 = nn.BatchNorm2d(10)
@@ -18,7 +19,7 @@ class DeepConvNettest(nn.Module):
         self.batchnorm2 = nn.BatchNorm2d(20)
         self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
 
-        self.fc1 = nn.Linear(30 * 51, self.nb_class)
+        self.fc1 = nn.Linear(ch * 14, self.nb_class)
 
     def forward(self, x):
         x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
@@ -35,7 +36,7 @@ class DeepConvNettest(nn.Module):
         x = self.pooling2(x)
         x = F.dropout(x, self.dropout)
         x = torch.mean(x, dim=1)
-        x = x.reshape(-1, 30 * 51)
+        x = x.reshape(-1, self.ch * 14)
         # FC Layer
         x = self.fc1(x)
         return x
@@ -105,8 +106,8 @@ class DeepConvNet(nn.Module):
         return x
 
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 30, 1000))
-    model = DeepConvNettest(30, dropout=0.2, nb_class=2)
+    inp = torch.autograd.Variable(torch.randn(2, 20, 400))
+    model = DeepConvNettest(20, dropout=0.2, nb_class=2)
     # model = DeepConvNet(20, dropout=0.2, nb_class=2)
 
     output = model(inp)

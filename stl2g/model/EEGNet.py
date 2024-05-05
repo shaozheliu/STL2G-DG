@@ -6,11 +6,12 @@ import torch.nn as nn
 
 
 class EEGNet(nn.Module):
-    def __init__(self, kernel_length, dropout):
+    def __init__(self, kernel_length, dropout, num_class):
         super(EEGNet, self).__init__()
         self.T = 120
         self.kernel_length = kernel_length
         self.dropout = dropout
+        self.num_class = num_class
         # Layer 1
         # self.conv1 = nn.Conv2d(1, 16, (1, self.kernel_length), padding=(0,  self.kernel_length//2))
         self.conv1 = nn.Conv2d(1, 16, (1, self.kernel_length), padding=0)
@@ -31,7 +32,7 @@ class EEGNet(nn.Module):
         # FC Layer
         # NOTE: This dimension will depend on the number of timestamps per sample in your data.
         # I have 120 timepoints.
-        self.fc1 = nn.Linear(4 * 2 * 16, 2)
+        self.fc1 = nn.Linear(4 * 2 * 16, self.num_class)
 
     def forward(self, x):
         x = x.unsqueeze(1)    # (2,1,20,400)
