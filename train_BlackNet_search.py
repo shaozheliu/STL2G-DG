@@ -15,6 +15,7 @@ from experiments.config import config
 from sklearn.model_selection import LeaveOneOut
 from stl2g.model.L2GNet import L2GNet_param
 
+
 base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
 from stl2g.preprocessing.config import CONSTANT
@@ -27,7 +28,7 @@ from ray import tune
 import ray
 import matplotlib.pyplot as plt
 from ray.tune.schedulers import AsyncHyperBandScheduler
-
+from stl2g.preprocessing.BCIIV2A import raw as raw_bci2a
 
 
 def setup_seed(seed):
@@ -36,6 +37,18 @@ def setup_seed(seed):
     np.random.seed(seed)
     random.seed(seed)
     torch.backends.cudnn.deterministic = True
+
+
+def test_func(model, X, y, device):
+    model.eval()
+    inputs = torch.from_numpy(X).type(torch.cuda.FloatTensor).to(device)
+    labels = torch.from_numpy(y).type(torch.cuda.LongTensor).to(device)
+    outputs = model(inputs)
+    proba, preds = torch.max(torch.softmax(outputs, dim=1), 1)
+    labels = labels.cpu().numpy()
+    preds = preds.cpu().numpy()
+    acc = accuracy_score(labels, preds)
+    return acc
 
 
 def Black_prepare_training(spatial_div_dict, temporal_div_dict, dropout, lr,
@@ -76,17 +89,6 @@ def train_func(model, optimizer, criterion, criterion_domain, train_loader, devi
             loss.backward()
             optimizer.step()
 
-def test_func(model, X, y, device):
-    model.eval()
-    inputs = torch.from_numpy(X).type(torch.cuda.FloatTensor).to(device)
-    labels = torch.from_numpy(y).type(torch.cuda.FloatTensor).to(device)
-    outputs = model(inputs)
-    proba, preds = torch.max(torch.sigmoid(outputs), 1)
-    te = torch.softmax(outputs, 1)[:, 1]
-    labels = labels.cpu().numpy()
-    preds = preds.cpu().numpy()
-    acc = accuracy_score(labels, preds)
-    return acc
 
 
 # 训练函数，待调参数为神经网络隐藏层的神经元数hiddenLayer
@@ -99,23 +101,29 @@ def train_iris(hyper_parms):
     clf_class = config[model_type][dataSet]['num_class']
     d_model_dic = config[model_type][dataSet]['d_model_dict']
     head_dic = config[model_type][dataSet]['head_dict']
-    domain_class = 3
+    domain_class = 9
     batch_size = config[model_type][dataSet]['batch_size']
     # batch_size = 10
     # 加载数据
-    train_subs = [i for i in range(1,52)]
-    test_sub = [i for i in range(52,54)]
+    train_subs = [i for i in range(1,8)]
+    test_sub = [i for i in range(8,9)]
     sel_chs = CONSTANT[dataSet]['sel_chs']
-    id_ch_selected = raw.chanel_selection(sel_chs)
-    div_id = raw.channel_division(spatial_local_dict)
-    spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
+    id_ch_selected = raw_bci2a.chanel_selection(sel_chs)
+    div_id = raw_bci2a.channel_division(spatial_local_dict)
+    spatial_region_split = raw_bci2a.region_id_seg(div_id, id_ch_selected)
     model, optimizer, lr_scheduler, criterion, criterion_domain, device = \
         L2G_prepare_training(spatial_region_split, temporal_div_dict, d_model_dic, head_dic, hyper_parms['d_ff'], hyper_parms['n_layers'], hyper_parms['dropout'],
                              hyper_parms['lr'], clf_class, domain_class)
     # Black_prepare_training(spatial_region_split, temporal_div_dict, hyper_parms['dropout'], hyper_parms['lr'], clf_class)
-    train_X, train_y, train_domain_y = raw.load_data_batchs(path, 1, train_subs, clf_class,
-                                                            id_ch_selected, 0.1)
-    test_X, test_y, test_domain_y = raw.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected, 0.1)
+    if dataSet == 'OpenBMI':
+        train_X, train_y, train_domain_y = raw.load_data_batchs(path, 1, train_subs, clf_class,
+                                                                id_ch_selected, 0.1)
+        test_X, test_y, test_domain_y = raw.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected, 0.1)
+    elif dataSet == 'BCIIV2A':
+        train_X, train_y, train_domain_y = raw_bci2a.load_data_batchs(path, 1, train_subs, clf_class,
+                                                                      id_ch_selected, 100)
+        test_X, test_y, test_domain_y = raw_bci2a.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected,
+                                                                   100)
     # 数据标准化
     X_train_mean = train_X.mean(0)
     X_train_var = np.sqrt(train_X.var(0))
@@ -141,7 +149,7 @@ if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     model_type = 'L2GNet'
-    dataSet = 'OpenBMI'
+    dataSet = 'BCIIV2A'
     log_path = f'rayResults/{dataSet}/{model_type}'
     for directory in [log_path]:
         if not os.path.exists(directory):
@@ -158,7 +166,7 @@ if __name__ == '__main__':
             'n_layers': tune.grid_search([1,2,3,4]),
             # 'lr': tune.choice([0.001, 0.003]),
             # 'dropout' : tune.choice([0.001, 0.003]),
-            'dropout' : tune.loguniform(0.001, 0.003),
+            'dropout' : tune.loguniform(0.001, 0.02),
             'lr': tune.loguniform(1e-4, 1e-1),
             # 'dropout' : tune.choice([0.001, 0.003]),
             # 'lr': tune.choice([0.001, 0.003]),
@@ -180,9 +188,9 @@ if __name__ == '__main__':
                 name="TuneTest",
                 local_dir="./rayResults",
                 stop={
-                    "acc": 0.80,
-                    "training_iteration": 150,
-                },
+                    "acc": (0.80),
+                    "training_iteration": (150),
+                }
             ),
             param_space=hyper_parms,
         )

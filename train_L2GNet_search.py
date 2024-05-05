@@ -18,6 +18,7 @@ base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
 from stl2g.preprocessing.config import CONSTANT
 from stl2g.preprocessing.OpenBMI import raw
+from stl2g.preprocessing.BCIIV2A import raw as raw_bci2a
 from stl2g.utils import get_loaders
 from stl2g.model.L2GNet import L2GNet_param
 from ray import tune, train
@@ -37,10 +38,10 @@ def setup_seed(seed):
 
 
 def L2GNet_prepare_training(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout, lr,
-                  clf_class, domain_class):
+                  clf_class, domain_class, ch):
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     model = L2GNet_param(spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class, domain_class).to(device)
+                  clf_class, domain_class, ch).to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0)
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=20)
     criterion = nn.CrossEntropyLoss()
@@ -109,16 +110,22 @@ def train_iris(hyper_parms):
     train_subs = [i for i in range(1,4)]
     test_sub = [i for i in range(4,5)]
     sel_chs = CONSTANT[dataSet]['sel_chs']
-    id_ch_selected = raw.chanel_selection(sel_chs)
-    div_id = raw.channel_division(spatial_local_dict)
-    spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
+    id_ch_selected = raw_bci2a.chanel_selection(sel_chs)
+    div_id = raw_bci2a.channel_division(spatial_local_dict)
+    spatial_region_split = raw_bci2a.region_id_seg(div_id, id_ch_selected)
     model, optimizer, lr_scheduler, criterion, criterion_domain, device = \
         L2GNet_prepare_training(spatial_region_split, temporal_div_dict, d_model_dict, head_dict, hyper_parms['d_ff'],
                                 hyper_parms['n_layers'],
-                                hyper_parms['dropout'], hyper_parms['lr'], clf_class, domain_class)
-    train_X, train_y, train_domain_y = raw.load_data_batchs(path, 1, train_subs, clf_class,
-                                                            id_ch_selected, 0.1)
-    test_X, test_y, test_domain_y = raw.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected, 0.1)
+                                hyper_parms['dropout'], hyper_parms['lr'], clf_class, domain_class, len(sel_chs))
+    if dataSet == 'OpenBMI':
+        train_X, train_y, train_domain_y = raw.load_data_batchs(path, 1, train_subs, clf_class,
+                                                                id_ch_selected, 0.1)
+        test_X, test_y, test_domain_y = raw.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected, 0.1)
+    elif dataSet == 'BCIIV2A':
+        train_X, train_y, train_domain_y = raw_bci2a.load_data_batchs(path, 1, train_subs, clf_class,
+                                                                      id_ch_selected, 100)
+        test_X, test_y, test_domain_y = raw_bci2a.load_data_batchs(path, 1, test_sub, clf_class, id_ch_selected,
+                                                                   100)
     # 数据标准化
     X_train_mean = train_X.mean(0)
     X_train_var = np.sqrt(train_X.var(0))
@@ -142,17 +149,16 @@ def train_iris(hyper_parms):
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
     model_type = 'L2GNet'
-    dataSet = 'OpenBMI'
+    dataSet = 'BCIIV2A'
 
 
 
     # 参数搜索空间,在16，32，64中选择hiddenLayer
     hyper_parms = {
-            'd_ff': tune.grid_search([1,2,3, 4,5, 6]),
+            'd_ff': tune.grid_search([1,2,3, 4,5]),
             'n_layers': tune.grid_search([1,2, 3,4,5, 6]),
             'dropout' : tune.loguniform(0.001, 0.003),
             'lr': tune.loguniform(1e-4, 1e-1),
-
     }
 
     sched = AsyncHyperBandScheduler()  # 采用的优化方法
@@ -178,7 +184,7 @@ if __name__ == '__main__':
     # 进行参数优化
     results = tuner.fit()
 
-    storagePath = "/home/alk/L2G-MI/logs/OpenBMI"
+    storagePath = "/home/alk/L2G-MI/logs/BCIIV2A"
     tuner = tune.Tuner.restore(path=storagePath)
     res = tuner.get_results()
     bestResult = res.get_best_result(metric="acc", mode="max")

@@ -777,13 +777,13 @@ class TL2G_DG(nn.Module):
 
 class L2GNet_param(nn.Module):
     def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class=4, domain_class=8):
+                  clf_class=4, domain_class=8, ch=20):
         super(L2GNet_param, self).__init__()
         self.linear_dim = (len(spatial_div_dict) + len(temporal_div_dict)) * d_model_dic['st_fusion']
         ## Spatial-Temporal Local to Global ##
         self.L2G = nn.Sequential()
         self.L2G.add_module('L2G', Local_Encoder(spatial_div_dict, temporal_div_dict, d_model_dic,
-                                                            head_dic, d_ff, n_layers, dropout))
+                                                            head_dic, d_ff, n_layers, dropout, ch))
         self.L2G.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
         self.L2G.add_module('c_bn1', nn.BatchNorm1d(8))
         self.L2G.add_module('c_relu1', nn.ReLU(True))
