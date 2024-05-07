@@ -17,6 +17,8 @@ base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 sys.path.append(base_dir)
 from stl2g.preprocessing.config import CONSTANT
 from stl2g.preprocessing.OpenBMI import raw
+from stl2g.preprocessing.BCIIV2A import raw as raw_bci2a
+from experiments import utils as exp_utils
 from stl2g.utils import get_loaders
 from stl2g.model.ShallowNet import Shallow_Net
 
@@ -104,25 +106,6 @@ def train_model_with_domain(model, criterion, criterion_domain, optimizer,lr_sch
     model.load_state_dict(best_model_wts)
     return model
 
-def test_evaluate(model, device, X, y, model_name):
-    inputs = torch.from_numpy(X).type(torch.cuda.FloatTensor).to(device)
-    labels = torch.from_numpy(y).type(torch.cuda.FloatTensor).to(device)
-    if model_name == "Mymodel_2b":
-        outputs, domain_outputs = model(inputs, 0.1)
-    else:
-        outputs = model(inputs)
-    # te = torch.softmax(outputs, dim=1)
-    proba, preds = torch.max(torch.sigmoid(outputs), 1)
-    te = torch.softmax(outputs, 1)[:, 1]
-    labels = labels.cpu().numpy()
-    preds = preds.cpu().numpy()
-    te = te.detach().cpu().numpy()
-    acc = accuracy_score(labels, preds)
-    ka = cohen_kappa_score(labels, preds)
-    prec = precision_score(labels, preds, average='weighted')
-    recall = recall_score(labels, preds, average='weighted')
-    roc_auc = roc_auc_score(labels, te)
-    return acc, ka, prec, recall, roc_auc
 
 def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs, lr, model_name, dropout, nb_class):
     acc_ls = []
@@ -138,11 +121,18 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
         test_sub = [subidx[sub_idx] for sub_idx in test_idx]
         print(f'train subjects are: {train_subs}, test subject is: {test_sub}')
         sel_chs = CONSTANT[dataSet]['sel_chs']
-        id_ch_selected = raw.chanel_selection(sel_chs)
         # 加载数据
-        train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, num_class,
+        if dataSet == 'OpenBMI':
+            id_ch_selected = raw.chanel_selection(sel_chs)
+            train_X, train_y, train_domain_y = raw.load_data_batchs(path, session, train_subs, nb_class,
                                                                        id_ch_selected, 0.1)
-        test_X, test_y, test_domain_y = raw.load_data_batchs(path, session, test_sub, num_class, id_ch_selected, 0.1)
+            test_X, test_y, test_domain_y = raw.load_data_batchs(path, session, test_sub, nb_class, id_ch_selected, 0.1)
+        elif dataSet == 'BCIIV2A':
+            id_ch_selected = raw_bci2a.chanel_selection(sel_chs)
+            train_X, train_y, train_domain_y = raw_bci2a.load_data_batchs(path, session, train_subs, nb_class,
+                                                                          id_ch_selected, 100)
+            test_X, test_y, test_domain_y = raw_bci2a.load_data_batchs(path, session, test_sub, nb_class,
+                                                                       id_ch_selected, 100)
         # 数据标准化
         X_train_mean = train_X.mean(0)
         X_train_var = np.sqrt(train_X.var(0))
@@ -163,7 +153,7 @@ def subject_independent_validation(dataSet, subjects, org_ch, batch_size, epochs
         best_model = train_model_with_domain(model, criterion, criterion_domain, optimizer, lr_scheduler, device, dataloaders, epochs, dataset)
         torch.save(best_model.state_dict(),
                    f'checkpoints/{dataSet}/{model_name}/exp_{model_name}_dropout:{dropout}_lr:{lr}_fold:{i}.pth')
-        acc, ka, prec, recall, roc_auc = test_evaluate(best_model, device, test_X, test_y, model_name)
+        acc, ka, prec, recall, roc_auc = exp_utils.test_evaluate_base(best_model, device, test_X, test_y, nb_class)
         acc_ls.append(acc)
         ka_ls.append(ka)
         prec_ls.append(prec)
@@ -180,7 +170,7 @@ if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
     os.environ["CUDA_VISIBLE_DEVICES"] = "3"
     model_type = 'ShallowNet'
-    dataSet = 'OpenBMI'
+    dataSet = 'BCIIV2A'
     path = CONSTANT[dataSet]['raw_path']
     subject = CONSTANT[dataSet]['n_subjs']
     num_ch = len(CONSTANT[dataSet]['sel_chs'])
@@ -189,8 +179,6 @@ if __name__ == '__main__':
     lr = config[model_type][dataSet]['lr']
     dropout = config[model_type][dataSet]['dropout']
     nb_class = config[model_type][dataSet]['num_class']
-    # subject = 3
-    num_class = 2
     session = 1
     log_path =  f'logs/{dataSet}/{model_type}'
     for directory in [log_path]:

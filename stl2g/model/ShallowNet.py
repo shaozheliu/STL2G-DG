@@ -19,7 +19,7 @@ class Shallow_Net(nn.Module):
 
         self.conv3 = nn.Conv2d(40, 20, kernel_size=(1,4), stride=(1,8))
         # FC Layer
-        self.fc1 = nn.Linear(460, 2)
+        self.fc1 = nn.Linear(460, nb_class)
 
     def forward(self, x):
         x = x.unsqueeze(1)

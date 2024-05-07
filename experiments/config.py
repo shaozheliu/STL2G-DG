@@ -49,6 +49,15 @@ config = {
                     'epochs': 300,
                     'dropout':0.001,
             },
+            'BCIIV2A': {
+                    'input_shape': (1,20,400),
+                    'data_format': 'NDCT',
+                    'num_class': 4,
+                    'lr': 0.001,
+                    'batch_size': 300,
+                    'epochs': 200,
+                    'dropout':0.001,
+            },
         },
         'STL2G': {
             'OpenBMI': {

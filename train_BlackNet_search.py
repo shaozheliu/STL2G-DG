@@ -162,11 +162,11 @@ if __name__ == '__main__':
 
     # 参数搜索空间,在16，32，64中选择hiddenLayer
     hyper_parms = {
-            'd_ff': tune.grid_search([1,2,3,4]),
-            'n_layers': tune.grid_search([1,2,3,4]),
+            'd_ff': tune.grid_search([1,2,3]),
+            'n_layers': tune.grid_search([1,2,3]),
             # 'lr': tune.choice([0.001, 0.003]),
             # 'dropout' : tune.choice([0.001, 0.003]),
-            'dropout' : tune.loguniform(0.001, 0.02),
+            'dropout' : tune.loguniform(0.2, 0.5),
             'lr': tune.loguniform(1e-4, 1e-1),
             # 'dropout' : tune.choice([0.001, 0.003]),
             # 'lr': tune.choice([0.001, 0.003]),
