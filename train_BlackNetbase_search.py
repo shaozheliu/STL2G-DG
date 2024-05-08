@@ -111,9 +111,11 @@ def train_iris(hyper_parms):
     id_ch_selected = raw_bci2a.chanel_selection(sel_chs)
     div_id = raw_bci2a.channel_division(spatial_local_dict)
     spatial_region_split = raw_bci2a.region_id_seg(div_id, id_ch_selected)
-    model, optimizer, lr_scheduler, criterion, criterion_domain, device = \
-        L2G_prepare_training(spatial_region_split, temporal_div_dict, d_model_dic, head_dic, hyper_parms['d_ff'], hyper_parms['n_layers'], hyper_parms['dropout'],
-                             hyper_parms['lr'], clf_class, domain_class)
+    # model, optimizer, lr_scheduler, criterion, criterion_domain, device = \
+    #     L2G_prepare_training(spatial_region_split, temporal_div_dict, d_model_dic, head_dic, hyper_parms['d_ff'], hyper_parms['n_layers'], hyper_parms['dropout'],
+    #                          hyper_parms['lr'], clf_class, domain_class)
+    model, optimizer, lr_scheduler, criterion, criterion_domain, device = Black_prepare_training(spatial_region_split, temporal_div_dict,
+                                                                                                 hyper_parms['dropout'], hyper_parms['lr'], clf_class)
     # Black_prepare_training(spatial_region_split, temporal_div_dict, hyper_parms['dropout'], hyper_parms['lr'], clf_class)
     if dataSet == 'OpenBMI':
         train_X, train_y, train_domain_y = raw.load_data_batchs(path, 1, train_subs, clf_class,
@@ -148,7 +150,7 @@ def train_iris(hyper_parms):
 if __name__ == '__main__':
     # sys.path.append(r"\home\alk\L2G-MI\stl2g")
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-    model_type = 'L2GNet'
+    model_type = 'BlackNet'
     dataSet = 'BCIIV2A'
     log_path = f'rayResults/{dataSet}/{model_type}'
     for directory in [log_path]:
@@ -161,16 +163,22 @@ if __name__ == '__main__':
     sys.stdout = outputfile
 
     # 参数搜索空间,在16，32，64中选择hiddenLayer
+    # hyper_parms = {
+    #         'd_ff': tune.grid_search([1,2,3]),
+    #         'n_layers': tune.grid_search([1,2,3]),
+    #         # 'lr': tune.choice([0.001, 0.003]),
+    #         # 'dropout' : tune.choice([0.001, 0.003]),
+    #         'dropout' : tune.loguniform(0.2, 0.5),
+    #         'lr': tune.loguniform(1e-4, 1e-1),
+    #         # 'dropout' : tune.choice([0.001, 0.003]),
+    #         # 'lr': tune.choice([0.001, 0.003]),
+    #         # 'lr': tune.loguniform(1e-4, 1e-1),
+    # }
+
     hyper_parms = {
-            'd_ff': tune.grid_search([1,2,3]),
-            'n_layers': tune.grid_search([1,2,3]),
-            # 'lr': tune.choice([0.001, 0.003]),
-            # 'dropout' : tune.choice([0.001, 0.003]),
-            'dropout' : tune.loguniform(0.2, 0.5),
-            'lr': tune.loguniform(1e-4, 1e-1),
-            # 'dropout' : tune.choice([0.001, 0.003]),
-            # 'lr': tune.choice([0.001, 0.003]),
-            # 'lr': tune.loguniform(1e-4, 1e-1),
+        'dropout': tune.loguniform(0.001, 0.003),
+        'lr': tune.loguniform(1e-4, 1e-1),
+
     }
 
     sched = AsyncHyperBandScheduler()  # 采用的优化方法
@@ -198,14 +206,6 @@ if __name__ == '__main__':
     bestResult = results.get_best_result(metric="acc", mode="max")
     print(bestResult.config)
     print(bestResult)
-    # bestResult.metrics_dataframe.plot("training_iteration", "acc")
-    # plt.show()
     outputfile.close()  # 关闭文件
-    # storagePath = "./rayResults/TuneTest"
-    # tuner = tune.Tuner.restore(path=storagePath, trainable=train_iris)
-    # res = tuner.get_results()
-    # bestResult = res.get_best_result(metric="acc", mode="max")
-    # print(bestResult.config)
-    # bestResult.metrics_dataframe.plot("training_iteration", "acc")
-    # plt.show()
+
 

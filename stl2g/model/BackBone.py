@@ -39,6 +39,69 @@ class BackBoneNet(nn.Module):
         x = x.reshape(-1, 2 * 8)
         return x
 
+class BackBoneNet_s_shallow(nn.Module):
+    def __init__(self, ch, dropout):
+        super(BackBoneNet_s_shallow, self).__init__()
+        ##----------------ShallowNet 基准网络------------------#
+        self.dropout = dropout
+        # Layer 1
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, 20), padding=0)
+        # Layer 2
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(ch, 1), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(20)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 8))
+
+        # Layer 2
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
+        self.conv3 = nn.Conv2d(in_channels=20, out_channels=10, kernel_size=(1, 4), stride=(1,8))
+        self.batchnorm3 = nn.BatchNorm2d(10)
+        self.pooling3 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 4))
+
+
+    def forward(self, x):
+        x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
+        # Layer 1
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.batchnorm2(x)
+        x = F.relu(x)
+        x = self.pooling2(x)
+        x = F.dropout(x, self.dropout)
+        x = self.conv3(x)  # 测试用
+        x = x.reshape(x.size(0), -1)
+        return x
+
+class BackBoneNet_t_shallow(nn.Module):
+    def __init__(self, ch, dropout):
+        super(BackBoneNet_t_shallow, self).__init__()
+        ##----------------ShallowNet 基准网络------------------#
+        self.dropout = dropout
+        # Layer 1
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=10, kernel_size=(1, 15), padding=0)
+        # Layer 2
+        self.conv2 = nn.Conv2d(in_channels=10, out_channels=20, kernel_size=(ch, 1), bias=False)
+        self.batchnorm2 = nn.BatchNorm2d(20)
+        self.pooling2 = nn.AvgPool2d(kernel_size=(1, 20), stride=(1, 2))
+
+        # Layer 2
+        # self.conv2 = nn.Conv2d(in_channels=4, out_channels=8, kernel_size=(1, 20), padding=(0, 10), bias=False)  # 10
+        self.conv3 = nn.Conv2d(in_channels=20, out_channels=10, kernel_size=(1, 12), stride=(1,4))
+
+
+    def forward(self, x):
+        x = x.unsqueeze(1)  # sample, 1, eeg_channel, timepoints
+        # Layer 1
+        x = self.conv1(x)
+        x = self.conv2(x)
+        x = self.batchnorm2(x)
+        x = F.relu(x)
+        x = self.pooling2(x)
+        x = F.dropout(x, self.dropout)
+        x = self.conv3(x)  # 测试用
+        x = x.reshape(x.size(0), -1)
+        return x
+
+
 
 class BackBoneNet_t(nn.Module):
     def __init__(self, ch, dropout):
@@ -85,7 +148,7 @@ class Spatial_Local_Conv(nn.Module):
         self.dropout = dropout
 
         for i in self.division.keys():
-            rigion_conv = BackBoneNet(len(self.division[i]), dropout)
+            rigion_conv = BackBoneNet_s_shallow(len(self.division[i]), dropout)
             setattr(self, f'S_region_conv{i}', rigion_conv)
 
     def forward(self, x):
@@ -106,7 +169,7 @@ class Temporal_Local_Conv(nn.Module):
         self.dropout = dropout
 
         for i in self.division.keys():
-            rigion_conv = BackBoneNet_t(30, dropout)
+            rigion_conv = BackBoneNet_t_shallow(20, dropout)
             setattr(self, f'T_region_conv{i}', rigion_conv)
 
     def forward(self, x):
@@ -131,67 +194,24 @@ class BlackNet(nn.Module):
         # 空间维度backbone分块卷积
         self.Local_spatial_conved = Spatial_Local_Conv(spatial_div_dict, dropout)
         self.Local_temporal_conved = Temporal_Local_Conv(temporal_div_dict, dropout)
-        self.fc1 = nn.Linear(self.st_len * 16, nb_class)
+        self.fc1 = nn.Linear(self.st_len * 60, nb_class)
 
     def forward(self, x):
         S_Region_tensor = torch.cat(self.Local_spatial_conved(x), dim=1)
         T_Region_tensor = torch.cat(self.Local_temporal_conved(x), dim=1)
         fusion = torch.cat([S_Region_tensor, T_Region_tensor], dim=1)
-        ret = fusion.reshape(-1, self.st_len * 16)
+        ret = fusion.reshape(-1, self.st_len * 60)
         ret = self.fc1(ret)
         return  ret
 
 
 
-
-
-class B_L2GNet(nn.Module):
-    def  __init__(self, spatial_div_dict, temporal_div_dict ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
-                  clf_class=4, domain_class=8):
-        super(B_L2GNet, self).__init__()
-        self.linear_dim = (len(spatial_div_dict) + len(temporal_div_dict)) * d_model_dic['st_fusion']
-        ## Spatial-Temporal Local to Global ##
-        self.L2G = nn.Sequential()
-        self.L2G.add_module('L2G', Local_Encoder(spatial_div_dict, temporal_div_dict, d_model_dic,
-                                                            head_dic, d_ff, n_layers, dropout))
-
-        # Class classifier layer
-        self.class_classifier = nn.Sequential()
-        self.class_classifier.add_module('c_fc1', nn.Linear(self.linear_dim, 8))
-        self.class_classifier.add_module('c_bn1', nn.BatchNorm1d(8))
-        self.class_classifier.add_module('c_relu1', nn.ReLU(True))
-        self.class_classifier.add_module('c_drop1', nn.Dropout(dropout))
-        self.class_classifier.add_module('c_fc2', nn.Linear(8, clf_class))
-        #
-        # Domain classifier
-        self.domain_classifier = nn.Sequential()
-        self.domain_classifier.add_module('d_fc1', nn.Linear(self.linear_dim, 8))
-        # self.domain_classifier.add_module('d_fc1', nn.Linear(4840, 32))
-        self.domain_classifier.add_module('d_bn1', nn.BatchNorm1d(8))
-        self.domain_classifier.add_module('d_relu1', nn.ReLU(True))
-        self.domain_classifier.add_module('d_drop1', nn.Dropout(dropout))
-        self.domain_classifier.add_module('d_fc2', nn.Linear(8, domain_class))
-
-
-    def forward(self, x, alpha):
-        x = self.L2G(x)  # 2, ch, 62
-        # feature = self.temporal_L_to_G(x)
-        ### channel 维度的加权 to-Global
-        # [2,22,24]
-        # feature = x.view(-1,x.shape[1] * x.shape[2])  # 将维度拉平
-        # feature = torch.mean(x, 1)
-        reverse_feature = ReverseLayerF.apply(x, alpha)
-        class_output = self.class_classifier(x)
-        domain_output = self.domain_classifier(reverse_feature)
-        return class_output, domain_output
-
-
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 30, 400))
+    inp = torch.autograd.Variable(torch.randn(2, 20, 400))
     s_division = {
         '1': [i for i in range(5)],
         '2': [i for i in range(5, 15)],
-        '3': [i for i in range(15, 30)],
+        '3': [i for i in range(15, 20)],
     }
     t_division = {
         '1': [i for i in range(100)],
@@ -201,6 +221,6 @@ if __name__ == "__main__":
     }
     # model = BackBoneNet(30, dropout=0.2)
     # model = Spatial_Local_Conv(s_division, dropout=0.3)
-    model = BlackNet(s_division, t_division, dropout=0.3, nb_class=2)
+    model = BlackNet(s_division, t_division, dropout=0.3, nb_class=4)
 
     output = model(inp)

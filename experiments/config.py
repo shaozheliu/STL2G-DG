@@ -148,5 +148,28 @@ config = {
                     'n_layers': 2,
                     'alpha_scala': 1
             },
+            'BCIIV2A': {
+                    'input_shape': (1,20,400),
+                    'data_format': 'NDCT',
+                    'num_class': 4,
+                    'domain_class': 9,
+                    'lr': 0.00190435,
+                    'batch_size': 250,
+                    'epochs': 200,
+                    'dropout':0.00144433,
+                    'd_model_dict' :{
+                        'spatial':30,
+                        'temporal':30,
+                        'st_fusion':30
+                        },
+                    'head_dict' :{
+                        'spatial': 2,
+                         'temporal': 2,
+                        'st_fusion':2
+                    },
+                    'd_ff': 2,
+                    'n_layers': 2,
+                    'alpha_scala': 1
+            },
         }
 }
