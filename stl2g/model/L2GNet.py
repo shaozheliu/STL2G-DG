@@ -799,7 +799,7 @@ class L2GNet_param(nn.Module):
 
 
 if __name__ == "__main__":
-    inp = torch.autograd.Variable(torch.randn(2, 20, 400))
+    inp = torch.autograd.Variable(torch.randn(1, 30, 400))
     s_division = {
         '1':[i for i in range(5)],
         '2':[i for i in range(5,15)],
@@ -826,6 +826,8 @@ if __name__ == "__main__":
     n_layers = 2
     dropout = 0.3
     # model = Local_Encoder(s_division, t_divison, d_model_dic, head_dic, d_ff, n_layers, dropout)
+    model = S_Backbone_test(20, 0.1)
+    res = model(inp)
     model = L2GNet(s_division, t_divison ,d_model_dic,  head_dic, d_ff, n_layers, dropout,
                   clf_class=4, domain_class=8)
     res = model(inp, 0.01)

@@ -1,14 +1,11 @@
 import random
 import os
-import sys
 import numpy as np
 import torch.backends.cudnn as cudnn
-import torch.optim as optim
 import torch.nn as nn
 from torchsummary import summary
 import tqdm
 import sys, time, copy
-from sklearn.metrics import accuracy_score, cohen_kappa_score, precision_score, recall_score, roc_auc_score
 import torch.utils.data
 from experiments.config import config
 from sklearn.model_selection import LeaveOneOut
