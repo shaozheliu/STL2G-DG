@@ -76,6 +76,7 @@ if __name__ == '__main__':
     div_id = raw.channel_division(spatial_local_dict)
     spatial_region_split = raw.region_id_seg(div_id, id_ch_selected)
     ret_dict = {}
+    ret_dict_t = {}
     # 取subject 数据
     subjects = [[4], [5], [6], [8], [15]]
     for subject in subjects:
@@ -113,19 +114,24 @@ if __name__ == '__main__':
             grads = grads.cpu().numpy()
             # print(params)
             # 定义反卷积层
-            grads = grads - grads.min()
-            grads = grads / grads.max()
+            # grads = grads - grads.min()
+            # grads = grads / grads.max()
+            grads = (grads - grads.min()) / (grads.max() - grads.min())
             # 对 axis=2 求均值，压缩维度 0
             # 取某一个时间点的数据
-            grads = grads[:,:, 100] # Right hand 可以
+            ch_point = grads[:,:, 100] # Right hand 可以
             # grads = grads[:, :, 150]  # Right hand 可以
-            result = np.mean(grads, axis=0)
-            # avg_grads = np.mean(grads, axis=0)
-            # result = np.mean(avg_grads, axis=1)
+            result = np.mean(ch_point, axis=0)
+            # 取某一个样本作为st特征图
+            sample_point = grads[0, :, :]
+
             # 然后使用 dict() 函数将元组列表转换为字典
             eeg_dict = dict(zip(sel_chs, list(result)))
             sub_lab_dic[label] = eeg_dict
+            sub_lab_dic_t[label] = sample_point
         ret_dict[subject[0]] = sub_lab_dic
+        ret_dict_t[subject[0]] = sub_lab_dic_t
+
 
     reMyWeight1, myinfo, my_chLa_index = set_montage(ret_dict[4][0])
     reMyWeight2, myinfo, my_chLa_index = set_montage(ret_dict[4][1])
@@ -175,7 +181,7 @@ if __name__ == '__main__':
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # 调整参数以适应您的布局
     cbar = fig.colorbar(im, cax=cbar_ax)
     # cbar.set_label('Colorbar Label', rotation=270, labelpad=15)  # 设置色彩指示条的标签
-    plt.savefig('./figs/spatial_region_active.png',bbox_inches='tight', dpi=300)
+    # plt.savefig('./figs/spatial_region_active.png',bbox_inches='tight', dpi=300)
     # plt.show()
 
 print(ret_dict)
