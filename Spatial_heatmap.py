@@ -116,8 +116,12 @@ if __name__ == '__main__':
             grads = grads - grads.min()
             grads = grads / grads.max()
             # 对 axis=2 求均值，压缩维度 0
-            avg_grads = np.mean(grads, axis=0)
-            result = np.mean(avg_grads, axis=1)
+            # 取某一个时间点的数据
+            grads = grads[:,:, 100] # Right hand 可以
+            # grads = grads[:, :, 150]  # Right hand 可以
+            result = np.mean(grads, axis=0)
+            # avg_grads = np.mean(grads, axis=0)
+            # result = np.mean(avg_grads, axis=1)
             # 然后使用 dict() 函数将元组列表转换为字典
             eeg_dict = dict(zip(sel_chs, list(result)))
             sub_lab_dic[label] = eeg_dict
