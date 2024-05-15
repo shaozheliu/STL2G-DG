@@ -5,8 +5,25 @@ import mne
 
 
 
+
+# 加载自定义的excel文件，制作自己的montage
+# myStardart = pd.read_excel('sensor_dataframe.xlsx', index_col=0) # 读取自己的电极定位文件
+# ch_names = np.array(myStardart.index)                              # 电极名称
+# position = np.array(myStardart)                                    # 电极坐标位置
+# sensorPosition = dict(zip(ch_names, position))                     # 制定为字典的形式
+# myMontage = mne.channels.make_dig_montage(ch_pos=sensorPosition)
+# myMontage.plot()
+# plt.show()
+# #
+# myWeight = {'Fz': 0.297512650489807,
+#           'FC3': 0.131990149617195, 'FC1': 0.36110034584999, 'FCz': 1, 'FC2':0, 'FC4': 0.288021147251129,
+#           'C5': 0.231157153844833, 'C3': 0.323453158140182, 'C1': 0.726558804512023, 'Cz': 0.41, 'C2': 0.46, 'C4': 0.99, 'C6':0.15,
+#           'CP3':0.23, 'CP1': -0.16, 'CPz': -0.16, 'CP2': -0.16, 'CP4': -0.16,
+#           'P1': -0.16, 'Pz': -0.16, 'P2': -0.16,
+#           'POz': -0.16,}
+
 def plot_montage(myWeight, id):
-    myStardart = pd.read_excel('sensor_dataframe.xlsx', index_col=0)  # 读取自己的电极定位文件
+    myStardart = pd.read_excel('home/alk/L2G-MI/experiments/sensor_dataframe.xlsx', index_col=0)  # 读取自己的电极定位文件
     ch_names = np.array(myStardart.index)  # 电极名称
     position = np.array(myStardart)  # 电极坐标位置
     sensorPosition = dict(zip(ch_names, position))  # 制定为字典的形式
@@ -37,8 +54,8 @@ def plot_montage(myWeight, id):
         reMyWeight.append(val)
     myinfo = mne.create_info(
             ch_names = my_chLa_index,
-            ch_types = ['eeg']*22,   # 通道个数
-            sfreq = 1000)            # 采样频率
+            ch_types = ['eeg']*30,   # 通道个数
+            sfreq = 400)            # 采样频率
     myinfo.set_montage(myMontage)
 
     im, cn = mne.viz.plot_topomap(reMyWeight,
@@ -55,7 +72,7 @@ def plot_montage(myWeight, id):
 
 
 def set_montage(myWeight):
-    myStardart = pd.read_excel('sensor_dataframe.xlsx', index_col=0)  # 读取自己的电极定位文件
+    myStardart = pd.read_excel('/home/alk/L2G-MI/experiments/sensor_dataframe.xlsx', index_col=0)  # 读取自己的电极定位文件
     ch_names = np.array(myStardart.index)  # 电极名称
     position = np.array(myStardart)  # 电极坐标位置
     sensorPosition = dict(zip(ch_names, position))  # 制定为字典的形式
@@ -86,7 +103,7 @@ def set_montage(myWeight):
         reMyWeight.append(val)
     myinfo = mne.create_info(
         ch_names=my_chLa_index,
-        ch_types=['eeg'] * 22,  # 通道个数
+        ch_types=['eeg'] * 30,  # 通道个数
         sfreq=1000)  # 采样频率
     myinfo.set_montage(myMontage)
     return reMyWeight, myinfo, my_chLa_index
