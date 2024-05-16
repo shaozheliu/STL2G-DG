@@ -23,6 +23,7 @@ import torch.utils.data
 from experiments.config import config
 from sklearn.model_selection import LeaveOneOut
 from experiments import utils as exp_utils
+from scipy.interpolate import interp1d
 
 
 base_dir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
@@ -132,41 +133,52 @@ if __name__ == '__main__':
         ret_dict[subject[0]] = sub_lab_dic
         ret_dict_t[subject[0]] = sub_lab_dic_t
 
-
-    reMyWeight1, myinfo, my_chLa_index = set_montage(ret_dict[4][0])
-    reMyWeight2, myinfo, my_chLa_index = set_montage(ret_dict[4][1])
-    reMyWeight3, myinfo, my_chLa_index = set_montage(ret_dict[5][0])
-    reMyWeight4, myinfo, my_chLa_index = set_montage(ret_dict[5][1])
-    reMyWeight5, myinfo, my_chLa_index = set_montage(ret_dict[6][0])
-    reMyWeight6, myinfo, my_chLa_index = set_montage(ret_dict[6][1])
-    reMyWeight7, myinfo, my_chLa_index = set_montage(ret_dict[8][0])
-    reMyWeight8, myinfo, my_chLa_index = set_montage(ret_dict[8][1])
-    reMyWeight9, myinfo, my_chLa_index = set_montage(ret_dict[15][0])
-    reMyWeight10, myinfo, my_chLa_index = set_montage(ret_dict[15][1])
+    # reMyWeight1, myinfo, my_chLa_index = set_montage(ret_dict_t[4][0])
+    # reMyWeight2, myinfo, my_chLa_index = set_montage(ret_dict_t[4][1])
+    # reMyWeight3, myinfo, my_chLa_index = set_montage(ret_dict_t[5][0])
+    # reMyWeight4, myinfo, my_chLa_index = set_montage(ret_dict_t[5][1])
+    # reMyWeight5, myinfo, my_chLa_index = set_montage(ret_dict_t[6][0])
+    # reMyWeight6, myinfo, my_chLa_index = set_montage(ret_dict_t[6][1])
+    # reMyWeight7, myinfo, my_chLa_index = set_montage(ret_dict_t[8][0])
+    # reMyWeight8, myinfo, my_chLa_index = set_montage(ret_dict_t[8][1])
+    # reMyWeight9, myinfo, my_chLa_index = set_montage(ret_dict_t[15][0])
+    # reMyWeight10, myinfo, my_chLa_index = set_montage(ret_dict_t[15][1])
 
     fig, ax = plt.subplots(nrows=2, ncols=5, figsize=(15, 6), gridspec_kw=dict(top=0.9),
                            sharex=True, sharey=True)
+    left_frontal = dict(zip(spatial_local_dict['Left Frontal'], spatial_region_split['Left Frontal']))
     weight_dic = {
-        0: reMyWeight1,
-        1: reMyWeight2,
-        2: reMyWeight3,
-        3: reMyWeight4,
-        4: reMyWeight5,
-        5: reMyWeight6,
-        6: reMyWeight7,
-        7: reMyWeight8,
-        8: reMyWeight9,
-        9: reMyWeight10,
+        0: ret_dict_t[4][0],
+        1: ret_dict_t[4][1],
+        2: ret_dict_t[5][0],
+        3: ret_dict_t[5][1],
+        4: ret_dict_t[6][0],
+        5: ret_dict_t[6][1],
+        6: ret_dict_t[8][0],
+        7: ret_dict_t[8][1],
+        8: ret_dict_t[15][0],
+        9: ret_dict_t[15][1],
     }
     plt_num = 0
     for i in range(2):
         for j in range(5):
-            im, cn = mne.viz.plot_topomap(weight_dic[plt_num], myinfo, cmap='coolwarm', axes=ax[i, j], show=False)
+            # 插值流程
+            # 将原始ndarray的第一个维度离散化为整数
+            x = np.arange(weight_dic[plt_num].shape[1])
+
+            # 创建目标维度，这里假设为（22，100）
+            new_shape = (weight_dic[plt_num].shape[0], 201)
+            # 创建插值对象
+            interp_func = interp1d(x, weight_dic[plt_num], axis=1, kind='linear')
+
+            # 计算插值结果
+            new_array = interp_func(np.linspace(0, x[-1], new_shape[1]))
+            im = ax[i, j].imshow(new_array, cmap='coolwarm', aspect=6)
             plt_num += 1
-            # if j == 3:
-            #     plt.colorbar(im, ax=ax[i, j+1])
+
     # 调整行与行之间的间距
     plt.subplots_adjust(hspace=0.1, wspace=0.1)  # 可根据需要调整具体的值
+    # plt.subplots_adjust(hspace=0.01, wspace=0.01)  # 可根据需要调整具体的值
     ax[0, 0].set_title('Subject 4', fontweight='bold', fontsize=16)
     ax[0, 1].set_title('Subject 5', fontweight='bold', fontsize=16)
     ax[0, 2].set_title('Subject 6', fontweight='bold', fontsize=16)
@@ -175,15 +187,13 @@ if __name__ == '__main__':
     ax[0, 0].set_ylabel('Left hand', fontweight='bold', fontsize=16)
     ax[1, 0].set_ylabel('Right hand', fontweight='bold', fontsize=16)
     # 调整行与行之间的间距
-    plt.subplots_adjust(hspace=0.01, wspace=0.01)  # 可根据需要调整具体的值
     plt.tight_layout()  # 调整布局
     # 绘制所有图像后，添加色彩指示条
     cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # 调整参数以适应您的布局
     cbar = fig.colorbar(im, cax=cbar_ax)
     # cbar.set_label('Colorbar Label', rotation=270, labelpad=15)  # 设置色彩指示条的标签
-    # plt.savefig('./figs/spatial_region_active.png',bbox_inches='tight', dpi=300)
+    plt.savefig('./figs/temporal_region_active.png',bbox_inches='tight', dpi=500)
     # plt.show()
-
 
 print(ret_dict)
 print('finish')
